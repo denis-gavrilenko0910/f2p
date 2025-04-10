@@ -2,7 +2,22 @@ import pickle
 from collections import UserDict
 from datetime import datetime, timedelta
 from prettytable import PrettyTable
+from fuzzywuzzy import process
 table = PrettyTable()
+
+
+COMMANDS = [
+    "hello",
+    "add",
+    "change",
+    "phone",
+    "all",
+    "add-birthday",
+    "show-birthday",
+    "birthdays",
+    "exit",
+    "close"
+]
 
 
 class Field:
@@ -120,26 +135,32 @@ class AddressBook(UserDict):
   """Only 1 address per contact, they can be same, i need to implement None"""
 
 
-  def get_upcoming_birthdays(self):
-    result = []
-    date_now = datetime.today().date()
-    for name, record in self.data.items():
-      if record.birthday:    
-        user_brthday = record.birthday.value.date()
-        user_brthday = user_brthday.replace(year=date_now.year)
-        if user_brthday < date_now:
-          user_brthday = user_brthday.replace(year=date_now.year + 1)
+  def get_upcoming_birthdays(self, days):
+        today = datetime.today().date()
+        end_date = today + timedelta(days=days)
+        list_of_birthdays = []
 
-        if user_brthday >= date_now and user_brthday < date_now + timedelta(days=7):
-          user_brthday = user_brthday.strftime('%d.%m.%Y')
-          result.append({'name': name, 'congratulation_date':  user_brthday})
-    return result  
-  
+        for record in self.data.values():
+            if record.birthday:
+                birthday = record.birthday.value.date()
+                birthday_this_year = birthday.replace(year=today.year)
 
-  def delete(self, name):
-    del_contact = self.find(name)
-    if del_contact:
-      self.data.pop(name, None)
+                if birthday_this_year < today:
+                    birthday_this_year = birthday_this_year.replace(year=today.year + 1)
+
+                if today <= birthday_this_year <= end_date:
+                    list_of_birthdays.append({
+                        "name": record.name.value,
+                        "birthday": birthday_this_year.strftime("%Y-%m-%d")
+                    })
+
+        return list_of_birthdays
+
+
+def delete(self, name):
+  del_contact = self.find(name)
+  if del_contact:
+    self.data.pop(name, None)
 
 
 def input_error(func):
@@ -226,13 +247,25 @@ def show_birthday(args, book: AddressBook) -> str:
 
 
 @input_error
-def birthdays(book: AddressBook):
-  result = book.get_upcoming_birthdays()
-  all_cont_brthds = ''
-  for el in result:
-    all_cont_brthds += f'name: {el["name"]}, congratulation date: {el["congratulation_date"]}'
-  return all_cont_brthds
+def birthdays(args, book):
+    if len(args) != 1:
+        raise KeyError
+    days = int(args[0])
+    upcoming_birthdays = book.get_upcoming_birthdays(days)
+    if not upcoming_birthdays:
+        return f"No birthdays in the next {days} days."
+     
+    table = PrettyTable()
+    table.field_names = ["Name", "Birthday", "Days Left"]
+
     
+    for entry in upcoming_birthdays:
+        name = entry["name"]
+        birthday = entry["birthday"]
+        days_left = (datetime.strptime(birthday, "%Y-%m-%d").date() - datetime.today().date()).days
+        table.add_row([name, birthday, days_left])
+
+    return table
 
 def save_data(book, filename="addressbook.pkl"):
   with open(filename, "wb") as f:
@@ -288,15 +321,36 @@ def search_by_address(address: str, book) -> str:
 def search(args, book: AddressBook) -> str:
   comms = {'name': search_by_name, 'phone': search_by_phone, 'birthday': search_by_birthday, 'email': search_by_email, 'address': search_by_address}
   return comms[args[0]](args[1], book)
+
   
-    
+def suggest_command(user_input, commands):
+    best_match = process.extractOne(user_input, commands)
+    if best_match and best_match[1] > 60:  # Если схожесть больше 60%
+        return best_match[0]
+    return None
 
 def main():
-  book = load_data()
+  filedata = load_data() 
+  book = filedata if filedata else AddressBook()
   print("Welcome to the assistant bot!")
   while True:
     user_input = input("Enter a command: ")
     command, *args = parse_input(user_input)
+    if command not in COMMANDS:
+            suggestion = suggest_command(command, COMMANDS)
+            if suggestion:
+                
+                choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
+                if choice == 'y':
+                    command = suggestion
+                else:
+                    print("Invalid command. Please try again.")
+                    continue
+            else:
+                print("Invalid command. Please try again.")
+                continue
+            
+
     if command in ["close", "exit"]:
       save_data(book)
       print("Good bye!\nSaving data...")
@@ -325,5 +379,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-
-
