@@ -238,10 +238,11 @@ def load_data(filename="addressbook.pkl"):
     with open(filename, "rb") as f:
       return pickle.load(f)
   except FileNotFoundError:
-    return AddressBook()
+    return None
 
 def main():
-  book = load_data()
+  filedata = load_data() 
+  book = filedata if filedata else AddressBook()
   print("Welcome to the assistant bot!")
   while True:
     user_input = input("Enter a command: ")
