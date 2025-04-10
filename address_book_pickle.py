@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from prettytable import PrettyTable
 from fuzzywuzzy import process
 
+
 COMMANDS = [
     "hello",
     "add",
@@ -16,6 +17,7 @@ COMMANDS = [
     "exit",
     "close"
 ]
+
 
 class Field:
   def __init__(self, value):
@@ -107,7 +109,6 @@ class AddressBook(UserDict):
         return list_of_birthdays
 
 
-  
   def delete(self, name):
     del_contact = self.find(name)
     if del_contact:
@@ -211,9 +212,6 @@ def birthdays(args, book):
 
     return table
 
-
-
-
 def save_data(book, filename="addressbook.pkl"):
   with open(filename, "wb") as f:
     pickle.dump(book, f)
@@ -223,16 +221,17 @@ def load_data(filename="addressbook.pkl"):
     with open(filename, "rb") as f:
       return pickle.load(f)
   except FileNotFoundError:
-    return AddressBook()  
+    return None  
   
 def suggest_command(user_input, commands):
     best_match = process.extractOne(user_input, commands)
     if best_match and best_match[1] > 60:  # Если схожесть больше 60%
         return best_match[0]
-    return None  
+    return None
 
 def main():
-  book = load_data()
+  filedata = load_data() 
+  book = filedata if filedata else AddressBook()
   print("Welcome to the assistant bot!")
   while True:
     user_input = input("Enter a command: ")
