@@ -5,7 +5,6 @@ from prettytable import PrettyTable
 table = PrettyTable()
 
 
-
 class Field:
   def __init__(self, value):
     self.value = value
@@ -18,20 +17,21 @@ class Name(Field):
 
 
 class Phone(Field):
-    def __init__(self, value):
-        if not value.isdigit() or len(value) <= 9:
-            raise ValueError("Phone number must be at least 10 characters long or contains letters")
-        super().__init__(value)
-
+  def __init__(self, value: str):
+    if value.isdigit() and len(value) == 10:
+      super().__init__(value)
+    else:
+      raise ValueError('Incorrect phone number')
+    
 
 class Birthday(Field):
   def __init__(self, value):
     try:
-      birth_date = datetime.strptime(value, '%d.%m.%Y')
-      super().__init__(birth_date)
+      brth_date = datetime.strptime(value, '%d.%m.%Y')
+      super().__init__(brth_date)
     except ValueError:
       raise ValueError("Invalid date format. Use DD.MM.YYYY")
-    
+
 
 class Adress(Field):
   pass
@@ -47,8 +47,10 @@ class Record:
     self.phones = []
     self.birthday = None
   
+
   def add_birthday(self, birthday):
     self.birthday = Birthday(birthday)
+
 
   def add_phone(self, phone):
     if phone not in [p.value for p in self.phones]:
@@ -60,15 +62,18 @@ class Record:
       if phone_obj.value == phone:
         return phone_obj
       
+
   def remove_phone(self, phone):
     rem_phone = self.find_phone(phone)
     if rem_phone:
       self.phones.remove(rem_phone)
 
+
   def edit_phone(self, old_phone, new_phone):
     phone_obj = self.find_phone(old_phone)
     if phone_obj:
       phone_obj.value = new_phone
+
 
   def __str__(self):
     birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
@@ -78,6 +83,7 @@ class Record:
 class AddressBook(UserDict):
   def add_record(self, record: Record):
     self.data[record.name.value] = record
+
 
   def find(self, name) -> Record:
     if name in self.data:
@@ -103,14 +109,15 @@ class AddressBook(UserDict):
         if email == contact.email.value:
           return contact
     return None
-  """Waiting for Email class to be implemented"""
+  """I will redo this def to be like find_by_ph(), cause emails are list, no same emails"""
+
 
   def find_by_addr(self, address) -> Record:
     for contact in self.data.values():
       if address == contact.address.value:
         return contact
     return None
-  """Waiting for address class to be implemented"""
+  """Only 1 address per contact, they can be same, i need to implement None"""
 
 
   def get_upcoming_birthdays(self):
@@ -126,9 +133,9 @@ class AddressBook(UserDict):
         if user_brthday >= date_now and user_brthday < date_now + timedelta(days=7):
           user_brthday = user_brthday.strftime('%d.%m.%Y')
           result.append({'name': name, 'congratulation_date':  user_brthday})
-      
     return result  
   
+
   def delete(self, name):
     del_contact = self.find(name)
     if del_contact:
@@ -145,13 +152,14 @@ def input_error(func):
       return "Give me the name."
     except KeyError:
       return "No such contact."
-
   return inner
+
 
 def parse_input(user_input) -> tuple:
   cmd, *args = user_input.split()
   cmd = cmd.strip().lower()
   return cmd, *args
+
 
 @input_error
 def add_contact(args, book: AddressBook):
@@ -166,6 +174,7 @@ def add_contact(args, book: AddressBook):
     record.add_phone(phone)
   return message
 
+
 @input_error
 def change_contact(args, book: AddressBook) -> str:
   name, old_phone, new_phone = args
@@ -176,6 +185,7 @@ def change_contact(args, book: AddressBook) -> str:
     result = 'Contact updated.'    
   return result 
 
+
 @input_error
 def show_phone(args, book: AddressBook) -> str:
   name = args[0]
@@ -183,6 +193,7 @@ def show_phone(args, book: AddressBook) -> str:
   if record:
     result = f"phones: {'; '.join(p.value for p in record.phones)}"
   return result 
+
 
 @input_error
 def show_all(book: AddressBook) -> str:
@@ -193,6 +204,7 @@ def show_all(book: AddressBook) -> str:
     return 'no contacts :('
   return result
 
+
 @input_error
 def add_birthday(args, book: AddressBook) -> str:
   name, birthday = args
@@ -202,6 +214,7 @@ def add_birthday(args, book: AddressBook) -> str:
     return 'Contact`s birthday added'
   return 'no contact'
 
+
 @input_error
 def show_birthday(args, book: AddressBook) -> str:
   name = args[0]
@@ -210,6 +223,7 @@ def show_birthday(args, book: AddressBook) -> str:
     birthday = record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'
     return birthday
   return 'The contact is not found'
+
 
 @input_error
 def birthdays(book: AddressBook):
@@ -224,12 +238,15 @@ def save_data(book, filename="addressbook.pkl"):
   with open(filename, "wb") as f:
     pickle.dump(book, f)
 
+
 def load_data(filename="addressbook.pkl"):
   try:
     with open(filename, "rb") as f:
       return pickle.load(f)
   except FileNotFoundError:
     return AddressBook()  # Повернення нової адресної книги, якщо файл не знайдено
+  
+
 def search_by_name(name: str, book) -> str:
   record: Record = book.find(name)
   if record:
@@ -282,7 +299,7 @@ def main():
     command, *args = parse_input(user_input)
     if command in ["close", "exit"]:
       save_data(book)
-      print("Good bye!")
+      print("Good bye!\nSaving data...")
       break
     elif command == "hello":
       print("How can I help you?")
