@@ -48,7 +48,7 @@ class Birthday(Field):
       raise ValueError("Invalid date format. Use DD.MM.YYYY")
 
 
-class Adress(Field):
+class Address(Field):
   pass
 
 
@@ -92,7 +92,7 @@ class Record:
 
   def __str__(self):
     birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
-    return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {birthday}"
+    return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {birthday}"#, email: {self.email.value if self.email else '-'}, address: {self.address.value if self.address else '-'}"
 
 
 class AddressBook(UserDict):
@@ -121,18 +121,16 @@ class AddressBook(UserDict):
 
   def find_by_mail(self, email) -> Record:
     for contact in self.data.values():
-        if email == contact.email.value:
+        if contact.email is not None and email == contact.email.value:
           return contact
     return None
-  """I will redo this def to be like find_by_ph(), cause emails are list, no same emails"""
 
 
   def find_by_addr(self, address) -> Record:
     for contact in self.data.values():
-      if address == contact.address.value:
+      if contact.address is not None and address == contact.address.value:
         return contact
     return None
-  """Only 1 address per contact, they can be same, i need to implement None"""
 
 
   def get_upcoming_birthdays(self, days):
@@ -157,10 +155,10 @@ class AddressBook(UserDict):
         return list_of_birthdays
 
 
-def delete(self, name):
-  del_contact = self.find(name)
-  if del_contact:
-    self.data.pop(name, None)
+  def delete(self, name):
+    del_contact = self.find(name)
+    if del_contact:
+      self.data.pop(name, None)
 
 
 def input_error(func):
@@ -213,7 +211,8 @@ def show_phone(args, book: AddressBook) -> str:
   record: Record = book.find(name)
   if record:
     result = f"phones: {'; '.join(p.value for p in record.phones)}"
-  return result 
+    return result 
+  return 'No contact with this phone number.'
 
 
 @input_error
@@ -317,17 +316,18 @@ def search_by_address(address: str, book) -> str:
     return f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}"
   return f'No contact with this Address: {address}.'
 
-
+@input_error
 def search(args, book: AddressBook) -> str:
   comms = {'name': search_by_name, 'phone': search_by_phone, 'birthday': search_by_birthday, 'email': search_by_email, 'address': search_by_address}
   return comms[args[0]](args[1], book)
 
-  
+
 def suggest_command(user_input, commands):
     best_match = process.extractOne(user_input, commands)
     if best_match and best_match[1] > 60:  # Если схожесть больше 60%
         return best_match[0]
     return None
+
 
 def main():
   filedata = load_data() 
