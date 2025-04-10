@@ -1,6 +1,9 @@
 import pickle
 from collections import UserDict
 from datetime import datetime, timedelta
+from prettytable import PrettyTable
+table = PrettyTable()
+
 
 
 class Field:
@@ -15,20 +18,27 @@ class Name(Field):
 
 
 class Phone(Field):
-  def __init__(self, value: str):
-    if value.isdigit() and len(value) == 10:
-      super().__init__(value)
-    else:
-      raise ValueError('Incorrect phone number')
-    
+    def __init__(self, value):
+        if not value.isdigit() or len(value) <= 9:
+            raise ValueError("Phone number must be at least 10 characters long or contains letters")
+        super().__init__(value)
+
 
 class Birthday(Field):
   def __init__(self, value):
     try:
-      brth_date = datetime.strptime(value, '%d.%m.%Y')
-      super().__init__(brth_date)
+      birth_date = datetime.strptime(value, '%d.%m.%Y')
+      super().__init__(birth_date)
     except ValueError:
       raise ValueError("Invalid date format. Use DD.MM.YYYY")
+    
+
+class Adress(Field):
+  pass
+
+
+class Email(Field):
+  pass
 
 
 class Record:
@@ -41,8 +51,10 @@ class Record:
     self.birthday = Birthday(birthday)
 
   def add_phone(self, phone):
-    self.phones.append(Phone(phone))
-  
+    if phone not in [p.value for p in self.phones]:
+        self.phones.append(Phone(phone))
+
+
   def find_phone(self, phone):
     for phone_obj in self.phones:
       if phone_obj.value == phone:
@@ -70,7 +82,37 @@ class AddressBook(UserDict):
   def find(self, name) -> Record:
     if name in self.data:
       return self.data[name]
+
+
+  def find_by_ph(self, phone) -> Record:
+    for contact in self.data.values():
+      if phone in [p.value for p in contact.phones]:
+        return contact
+    return None
+
+
+  def find_by_brthd(self, birthday) -> Record:
+    for contact in self.data.values():
+      if contact.birthday is not None and Birthday(birthday).value == contact.birthday.value:
+        yield contact
+    return (None,)
     
+
+  def find_by_mail(self, email) -> Record:
+    for contact in self.data.values():
+        if email == contact.email.value:
+          return contact
+    return None
+  """Waiting for Email class to be implemented"""
+
+  def find_by_addr(self, address) -> Record:
+    for contact in self.data.values():
+      if address == contact.address.value:
+        return contact
+    return None
+  """Waiting for address class to be implemented"""
+
+
   def get_upcoming_birthdays(self):
     result = []
     date_now = datetime.today().date()
@@ -188,6 +230,49 @@ def load_data(filename="addressbook.pkl"):
       return pickle.load(f)
   except FileNotFoundError:
     return AddressBook()  # Повернення нової адресної книги, якщо файл не знайдено
+def search_by_name(name: str, book) -> str:
+  record: Record = book.find(name)
+  if record:
+    return f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}"
+  return 'No such contact.'
+
+
+def search_by_phone(phone: str, book) -> str:
+  record: Record = book.find_by_ph(phone)
+  if record:
+    return f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}"
+  return f'No contact with this Phone: {phone}.'
+
+
+def search_by_birthday(birthday: str, book) -> str:
+  records = book.find_by_brthd(birthday)
+  if records == (None,):
+    return f'No contact with this Birthday: {birthday}.'
+  answer = ""
+  for record in records:
+    answer += f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}\n"
+  return answer
+
+
+def search_by_email(email: str, book) -> str:
+  record: Record = book.find_by_mail(email)
+  if record:
+    return f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}"
+  return f'No contact with this Email: {email}.'
+
+
+def search_by_address(address: str, book) -> str: 
+  record: Record = book.find_by_addr(address)
+  if record:
+    return f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}"
+  return f'No contact with this Address: {address}.'
+
+
+def search(args, book: AddressBook) -> str:
+  comms = {'name': search_by_name, 'phone': search_by_phone, 'birthday': search_by_birthday, 'email': search_by_email, 'address': search_by_address}
+  return comms[args[0]](args[1], book)
+  
+    
 
 def main():
   book = load_data()
@@ -215,6 +300,8 @@ def main():
       print(show_birthday(args, book))
     elif command == "birthdays":
       print(birthdays(book))         
+    elif command == 'search':
+      print(search(args, book))
     else:
       print("Invalid command.")
         
