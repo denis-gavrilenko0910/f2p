@@ -1,6 +1,7 @@
 import pickle
 from collections import UserDict
 from datetime import datetime, timedelta
+import re 
 
 
 class Field:
@@ -36,12 +37,23 @@ class Record:
     self.name = Name(name)
     self.phones = []
     self.birthday = None
+    self.email = None
   
   def add_birthday(self, birthday):
     self.birthday = Birthday(birthday)
 
   def add_phone(self, phone):
     self.phones.append(Phone(phone))
+
+  def add_email(self, email):
+    if self.is_valid_email(email):
+        self.email = email
+    else:
+      raise ValueError('Invalid email format. Please use "example@domain.com".')
+    
+  def is_valid_email(self, email):
+    email_regex = r'(\w+)@(\w+\.\w+)'
+    return re.match(email_regex, email) is not None
   
   def find_phone(self, phone):
     for phone_obj in self.phones:
@@ -60,7 +72,8 @@ class Record:
 
   def __str__(self):
     birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
-    return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {birthday}"
+    emeil = self.email if self.email else '-'
+    return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {birthday}, email: {emeil}"
 
 
 class AddressBook(UserDict):
@@ -113,34 +126,72 @@ def parse_input(user_input) -> tuple:
 
 @input_error
 def add_contact(args, book: AddressBook):
-  name, phone, *_ = args
+  name, phone, email, *_ = args
   record = book.find(name)
   message = "Contact updated."
+  if not phone.isdigit() or len(phone) != 10:
+    return 'Phone number must be 10 digits'
+  
+  if not re.match(r'(\w+)@(\w+\.\w+)', email):
+    return 'Invalid email format. Please use "example@domain.com".'
+  
   if record is None:
     record = Record(name)
     book.add_record(record)
     message = "Contact added."
+
   if phone:
-    record.add_phone(phone)
+    try:
+      record.add_phone(phone)
+    except ValueError:
+      return 'Invalid phone number. it must be 10 digits.'
+    
+  if email:
+    try:
+      record.add_email(email)
+    except ValueError:
+      return 'Invalid email format. Please use "example@domain.com".'
   return message
 
 @input_error
 def change_contact(args, book: AddressBook) -> str:
   name, old_phone, new_phone = args
-  result = 'No contact found'
+  result = 'Сontact not found'
   record: Record = book.find(name)
   if record:
-    record.edit_phone(old_phone, new_phone)
-    result = 'Contact updated.'    
-  return result 
+    if not new_phone.isdigit() or len(new_phone) != 10:
+      return 'Phone number must be 10 digits.'
+    
+    try:
+      record.edit_phone(old_phone, new_phone)
+      result = 'Contact updated.'
+    except ValueError as e:
+      result = str(e)
+  return result
+
+@input_error
+def change_email(args, book: AddressBook) -> str:
+  name, new_email = args
+  record: Record = book.find(name)
+  if not re.match(r'(\w+)@(\w+\.\w+)', new_email):
+    return 'Invalid email format. Please use "example@domain.com".'
+  
+  if record:
+    try:
+      record.add_email(new_email)
+      return 'Email updated successfully.'
+    except ValueError:
+      return 'Invalid email format. Please use "example@domain.com".'
+  return 'Contact not found'
+
 
 @input_error
 def show_phone(args, book: AddressBook) -> str:
   name = args[0]
   record: Record = book.find(name)
   if record:
-    result = f"phones: {'; '.join(p.value for p in record.phones)}"
-  return result 
+    return f"phones: {'; '.join(p.value for p in record.phones)}"
+  return 'Contact not found'
 
 @input_error
 def show_all(book: AddressBook) -> str:
@@ -187,7 +238,7 @@ def load_data(filename="addressbook.pkl"):
     with open(filename, "rb") as f:
       return pickle.load(f)
   except FileNotFoundError:
-    return AddressBook()  # Повернення нової адресної книги, якщо файл не знайдено
+    return AddressBook()
 
 def main():
   book = load_data()
@@ -205,6 +256,8 @@ def main():
       print(add_contact(args, book))
     elif command == "change":
       print(change_contact(args, book))
+    elif command == "change-email":
+      print(change_email(args, book))
     elif command == "phone":
       print(show_phone(args, book))
     elif command == "all":
