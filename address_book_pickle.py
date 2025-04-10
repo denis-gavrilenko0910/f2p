@@ -273,8 +273,13 @@ def load_data(filename="addressbook.pkl"):
       return pickle.load(f)
   except FileNotFoundError:
 
-    return AddressBook()
-=========
+    return AddressBook()  
+  
+def suggest_command(user_input, commands):
+    best_match = process.extractOne(user_input, commands)
+    if best_match and best_match[1] > 60:  # Если схожесть больше 60%
+        return best_match[0]
+
 
 
 def main():
