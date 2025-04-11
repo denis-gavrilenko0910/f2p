@@ -177,6 +177,17 @@ class Record:
     self.birthday = Birthday(new_birthday)     
 
 
+  def prettytable_for_search(self):
+    table = PrettyTable()
+    table.field_names = ["Name", "Phones", "Email", "Address", "Birthday"]
+    birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
+    email = self.email.value if self.email else '-'
+    address = self.address.value if self.address else '-'
+    phones = ';'.join(p.value for p in self.phones) if self.phones else '-'
+    table.add_row([self.name.value, phones, email, address, birthday])
+    return table
+  
+
   def __str__(self):
     birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
     email = self.email.value if self.email else '-'
@@ -203,10 +214,13 @@ class AddressBook(UserDict):
 
 
   def find_by_brthd(self, birthday) -> Record:
+    bday_with_year = (len(birthday.split('.')) == 3 and len(birthday.split('.')[0]) == 2 and len(birthday.split('.')[1]) == 2 and len(birthday.split('.')[2]) == 4)
+    contacts = []
     for contact in self.data.values():
-      if contact.birthday is not None and Birthday(birthday).value == contact.birthday.value:
-        yield contact
-    return (None,)
+      if contact.birthday is not None and birthday == contact.birthday.value.strftime('%d.%m' + '%Y' * bday_with_year):
+        contacts.append(contact)
+    return contacts
+    
     
 
   def find_by_mail(self, email) -> Record:
@@ -553,38 +567,45 @@ def edit_contact_info(book: AddressBook):
 def search_by_name(name: str, book) -> str:
   record: Record = book.find(name.capitalize())
   if record:
-    return record
+    return record.prettytable_for_search()
   return 'No such contact.'
 
 
 def search_by_phone(phone: str, book) -> str:
   record: Record = book.find_by_ph(phone)
   if record:
-    return record
+    return record.prettytable_for_search()
   return f'No contact with this Phone: {phone}.'
+
+
+def prettytable_for_search_birthday(records):
+  table = PrettyTable()
+  table.field_names = ["Name", "Birthday"]
+  for cont in records:
+    name = cont.name.value
+    birthday = cont.birthday.value.strftime('%d.%m.%Y') if cont.birthday else '-'
+    table.add_row([name, birthday])
+  return table
 
 
 def search_by_birthday(birthday: str, book) -> str:
   records = book.find_by_brthd(birthday)
-  if records == (None,):
+  if len(records) == 0:
     return f'No contact with this Birthday: {birthday}.'
-  answer = ""
-  for record in records:
-    answer += record.__str__() + "\n"
-  return answer
+  return prettytable_for_search_birthday(records)
 
 
 def search_by_email(email: str, book) -> str:
   record: Record = book.find_by_mail(email)
   if record:
-    return record
+    return record.prettytable_for_search()
   return f'No contact with this Email: {email}.'
 
 
 def search_by_address(address: str, book) -> str: 
   record: Record = book.find_by_addr(address)
   if record:
-    return record
+    return record.prettytable_for_search()
   return f'No contact with this Address: {address}.'
 
 
