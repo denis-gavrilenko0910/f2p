@@ -9,7 +9,7 @@ from fuzzywuzzy import process
 COMMANDS = [
     "hello",
     "add",
-    "add-all"
+    "addall"
     "remove",
     "edit",
     "delete",
@@ -245,15 +245,6 @@ def show_all(book: AddressBook) -> str:
     return 'no contacts :('
   return result
 
-# @input_error
-# def add_birthday(args, book: AddressBook) -> str:
-#   name, birthday = args
-#   record: Record = book.find(name)
-#   if record:
-#     record.add_birthday(birthday)
-#     return 'Contact`s birthday added'
-#   return 'no contact'
-
 @input_error
 def show_birthday(args, book: AddressBook) -> str:
   name = args[0]
@@ -286,7 +277,7 @@ def birthdays(args, book):
 
 @input_error
 def add_all(book: AddressBook):
-  name = input('Enter the name where you want add informations: ')
+  name = input('Enter the name where you want add informations: ').capitalize()
   record = book.find(name)
   if record is None:
     record = Record(name)
@@ -334,7 +325,7 @@ def add_all(book: AddressBook):
 
 @input_error
 def remove_contact_info(book: AddressBook):
-  name = input('Which contact do you want to edit? ')
+  name = input('Which contact do you want to edit? ').capitalize()
   record = book.find(name)
   if record:
     info_type = input('What do you want to remove? (phone, email, address, birthday)').lower()
@@ -379,7 +370,7 @@ def remove_contact_info(book: AddressBook):
 
 @input_error
 def edit_contact_info(book: AddressBook):
-  name = input('Enter the contact name: ')
+  name = input('Enter the contact name: ').capitalize()
   record = book.find(name)
   if record:
     info_type = input('What do you want to edit? (phone, email, address, birthday)').lower()
@@ -469,7 +460,7 @@ def edit_contact_info(book: AddressBook):
           return f'{name} have not email' 
 
     elif info_type == 'address':
-      choice = input('Do you want add or change? (add/change): ')
+      choice = input('Do you want add or change? (add/change): ').lower()
       if choice == 'add':
         if not record.address:
           new_address = input('Enter address: ')
@@ -535,7 +526,7 @@ def main():
       print("How can I help you?")
     elif command == "add":
       print(add_contact(book))
-    elif command == "add-all":
+    elif command == "addall":
       print(add_all(book))
     elif command == "remove":
       print(remove_contact_info(book))
@@ -547,8 +538,6 @@ def main():
       print(show_phone(args, book))
     elif command == "all":
       print(show_all(book))
-    # elif command == "add-birthday":
-    #   print(add_birthday(args, book))
     elif command == "show-birthday":
       print(show_birthday(args, book))
     elif command == "birthdays":
