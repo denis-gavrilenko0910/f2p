@@ -11,7 +11,7 @@ COMMANDS = [
     "hello",
     'help',
     "add",
-    "addall"
+    "addall",
     "remove",
     "edit",
     "delete",
@@ -137,7 +137,7 @@ class Record:
   def find_birthday(self):
     if self.birthday:
       return self.birthday
-    return 'Contat do not have birthday'
+    return 'Contact does not have birthday'
   
   def remove_birthday(self):
     rem_birthday = self.find_birthday
@@ -274,41 +274,41 @@ def parse_input(user_input) -> tuple:
 
 
 @input_error
-# def add_contact(book: AddressBook):
-#   name = input('Enter the name: ')
-#   record = book.find(name)
-#   if record is None:
-#     record = Record(name)
-#     book.add_record(record)
-#     return f'Contact {name} added.'
-#   return "Contact alreade exists"
-def add_contact(args, book: AddressBook):
-  name, phone, email, *_ = args
+def add_contact(book: AddressBook):
+  name = input('Enter the name: ')
   record = book.find(name)
-  message = "Contact updated."
-  if not phone.isdigit() or len(phone) != 10:
-    return 'Phone number must be 10 digits'
-  
-  if not re.match(r'(\w+)@(\w+\.\w+)', email):
-    return 'Invalid email format. Please use "example@domain.com".'
-  
   if record is None:
     record = Record(name)
     book.add_record(record)
-    message = "Contact added."
+    return f'Contact {name} added.'
+  return "Contact alreade exists"
+# def add_contact(args, book: AddressBook):
+#   name, phone, email, *_ = args
+#   record = book.find(name)
+#   message = "Contact updated."
+#   if not phone.isdigit() or len(phone) != 10:
+#     return 'Phone number must be 10 digits'
+  
+#   if not re.match(r'(\w+)@(\w+\.\w+)', email):
+#     return 'Invalid email format. Please use "example@domain.com".'
+  
+#   if record is None:
+#     record = Record(name)
+#     book.add_record(record)
+#     message = "Contact added."
 
-  if phone:
-    try:
-      record.add_phone(phone)
-    except ValueError:
-      return 'Invalid phone number. it must be 10 digits.'
+#   if phone:
+#     try:
+#       record.add_phone(phone)
+#     except ValueError:
+#       return 'Invalid phone number. it must be 10 digits.'
     
-  if email:
-    try:
-      record.add_email(email)
-    except ValueError:
-      return 'Invalid email format. Please use "example@domain.com".'
-  return message
+#   if email:
+#     try:
+#       record.add_email(email)
+#     except ValueError:
+#       return 'Invalid email format. Please use "example@domain.com".'
+#   return message
 
 
 @input_error
@@ -319,21 +319,6 @@ def remove_contact(book: AddressBook):
     book.delete(name)
     return f'Contact {name} deleted.'
   return 'Contact not exists'
-
-def change_contact(args, book: AddressBook) -> str:
-  name, old_phone, new_phone = args
-  result = 'Сontact not found'
-  record: Record = book.find(name)
-  if record:
-    if not new_phone.isdigit() or len(new_phone) != 10:
-      return 'Phone number must be 10 digits.'
-    
-    try:
-      record.edit_phone(old_phone, new_phone)
-      result = 'Contact updated.'
-    except ValueError as e:
-      result = str(e)
-  return result
 
 
 @input_error
@@ -684,7 +669,7 @@ def main():
     elif command == "hello":
       print("How can I help you?")
     elif command == "add":
-      print(add_contact(args, book))
+      print(add_contact(book))
     elif command == "addall":
       print(add_all(book))
     elif command == "remove":
@@ -693,8 +678,6 @@ def main():
       print(edit_contact_info(book))    
     elif command == "delete":
       print(remove_contact(book))
-    elif command == "change":
-      print(change_contact(args, book))
     elif command == "phone":
       print(show_phone(args, book))
     elif command == "all":
@@ -702,7 +685,7 @@ def main():
     elif command == "show-birthday":
       print(show_birthday(args, book))
     elif command == "birthdays":
-      print(birthdays(book))         
+      print(birthdays(args, book))         
     elif command == 'search':
       print(search(args, book))
     elif command == 'help':
