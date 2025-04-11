@@ -77,13 +77,6 @@ class Email(Field):
       raise ValueError('Invalid email format')
     super().__init__(value)
 
-class Address(Field):
-  pass
-
-
-class Email(Field):
-  pass
-
 
 class Record:
   def __init__(self, name):
@@ -116,7 +109,7 @@ class Record:
     return 'Contact do not have email'
 
   def remove_email(self):
-    rem_email = self.find_email
+    rem_email = self.find_email()
     if rem_email:
       self.email = None
       return 'Email removed'
@@ -128,7 +121,7 @@ class Record:
     return 'Contact do not have address'
   
   def remove_address(self):
-    rem_address = self.find_address
+    rem_address = self.find_address()
     if rem_address:
       self.address = None
       return 'Address removed'
@@ -140,7 +133,7 @@ class Record:
     return 'Contact does not have birthday'
   
   def remove_birthday(self):
-    rem_birthday = self.find_birthday
+    rem_birthday = self.find_birthday()
     if rem_birthday:
       self.birthday = None
       return 'Birthday removed'
@@ -181,7 +174,7 @@ class Record:
     birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
     email = self.email.value if self.email else '-'
     address = self.address.value if self.address else '-'
-    phones = ';'.join(p.value for p in self.phones) if self.phones else '-'
+    phones = '; '.join(p.value for p in self.phones) if self.phones else '-'
     return f"Contact: {self.name.value}, Phones: {phones}, Email: {email}, Address: {address}, birthday: {birthday}"
   
   
@@ -267,7 +260,7 @@ def input_error(func):
 def parse_input(user_input) -> tuple:
   user_input = user_input.strip()
   if not user_input:
-    return 'empty', []
+    return 'qwerty', []
   cmd, *args = user_input.split()
   cmd = cmd.strip().lower()
   return cmd, *args
@@ -275,7 +268,7 @@ def parse_input(user_input) -> tuple:
 
 @input_error
 def add_contact(book: AddressBook):
-  name = input('Enter the name: ')
+  name = input('Enter the name: ').capitalize()
   record = book.find(name)
   if record is None:
     record = Record(name)
@@ -313,7 +306,7 @@ def add_contact(book: AddressBook):
 
 @input_error
 def remove_contact(book: AddressBook):
-  name = input('Which contact do you want to delete? ')
+  name = input('Which contact do you want to delete?: ').capitalize()
   record = book.find(name)
   if record:
     book.delete(name)
@@ -333,13 +326,22 @@ def show_phone(args, book: AddressBook) -> str:
 
 @input_error
 def show_all(book: AddressBook) -> str:
-  result = ''
-  for name, record in book.data.items():
-    result += f'{record}\n'
-  if not result:
-    return 'no contacts :('
-  return result
+  if not book.data:
+    return "No contacts found :("
+  table = PrettyTable()
+  table.title = "CONTACTS"
+  table.field_names = ['NAME', 'PHONES', 'EMAIL', 'ADDRESS', 'BIRTHDAY']
+  table.align = 'c'
+  table.hrules = 1
 
+  for record in book.data.values():
+    birthday = record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'
+    email = record.email.value if record.email else '-'
+    address = record.address.value if record.address else '-'
+    phones = '\n'.join(p.value for p in record.phones) if record.phones else '-'
+
+    table.add_row([record.name.value, phones, email, address, birthday])
+  return '\n' + str(table) + '\n'
 
 @input_error
 def show_birthday(args, book: AddressBook) -> str:
@@ -374,22 +376,22 @@ def birthdays(args, book):
 
 @input_error
 def add_all(book: AddressBook):
-  name = input('Enter the name where you want add informations: ').capitalize()
+  name = input('Enter the name: ').capitalize()
   record = book.find(name)
   if record is None:
     record = Record(name)
     book.add_record(record)
-    print(f'Contact {name} added.')
+  
 
     while True:
-      phone = input('Enter valid phone number or press Enter to skip: ')
+      phone = input('Enter 10-digit phone number or press Enter to skip: ')
       if phone == '':
         break
       try:
         record.add_phone(phone)
         print(f'Phone {phone} added.')
       except ValueError:
-        print('Invalid phone number. Please enter a valid 10-digit number ')
+        print('Invalid phone number. Please enter a valid 10-digit number.')
 
     while True:
       email = input('Enter valid email or press Enter to skip: ')
@@ -407,8 +409,8 @@ def add_all(book: AddressBook):
       record.add_address(address)
       print(f'Address {address} added.')
 
-    birthday = input('Enter bitrhday DD.MM.YYYY or press Enter to skip: ')
     while True:
+      birthday = input('Enter bitrhday DD.MM.YYYY or press Enter to skip: ')
       if birthday == '':
         break
       try:
@@ -417,15 +419,16 @@ def add_all(book: AddressBook):
         break
       except ValueError:
         print('Invalid date format. Please use DD.MM.YYYY .')
+    return f'Contact {name} added'    
   else:
-    return 'Contact already exists.'      
+    return f'Contact {name} already exists.'      
 
 @input_error
 def remove_contact_info(book: AddressBook):
-  name = input('Which contact do you want to edit? ').capitalize()
+  name = input('Which contact do you want to edit?: ').capitalize()
   record = book.find(name)
   if record:
-    info_type = input('What do you want to remove? (phone, email, address, birthday)').lower()
+    info_type = input('What do you want to remove? (phone, email, address, birthday): ').lower()
     
     if info_type == 'phone':
       if len(record.phones) == 1:
@@ -470,7 +473,7 @@ def edit_contact_info(book: AddressBook):
   name = input('Enter the contact name: ').capitalize()
   record = book.find(name)
   if record:
-    info_type = input('What do you want to edit? (phone, email, address, birthday)').lower()
+    info_type = input('What do you want to edit? (phone, email, address, birthday): ').lower()
 
     if info_type == 'phone':
       if record.phones:
@@ -572,7 +575,8 @@ def edit_contact_info(book: AddressBook):
           return f'{new_address} changed to {name}.'
         else:
           print(f'{name} have not address')
-
+    else:
+      return "Invalid option. Please choose from: phone, email, address, birthday"
   else:
     return 'No such contact'        
              
@@ -667,7 +671,7 @@ def main():
       print("Good bye!\nSaving data...")
       break
     elif command == "hello":
-      print("How can I help you?")
+      print("How can I help you?") 
     elif command == "add":
       print(add_contact(book))
     elif command == "addall":
