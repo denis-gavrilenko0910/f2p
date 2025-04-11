@@ -4,10 +4,12 @@ from datetime import datetime, timedelta
 import re
 from prettytable import PrettyTable
 from fuzzywuzzy import process
+table = PrettyTable()
 
 
 COMMANDS = [
     "hello",
+    'help',
     "add",
     "addall"
     "remove",
@@ -18,9 +20,25 @@ COMMANDS = [
     "add-birthday",
     "show-birthday",
     "birthdays",
+    "search",
     "exit",
     "close"
 ]
+
+# COMMANDS_HELP = [
+#     "hello",
+#     'help',
+#     "add [Name] [Phone]",
+#     "change [Name] [Old Phone] [New Phone]",
+#     "phone [Name]",
+#     "all",
+#     "add-birthday [Name] [Birthday]",
+#     "show-birthday [Name]",
+#     "birthdays",
+#     "search [Name|Phone|Birthday|Email|Address] [Value]",
+#     "exit",
+#     "close"
+# ]
 
 
 class Field:
@@ -59,16 +77,26 @@ class Email(Field):
       raise ValueError('Invalid email format')
     super().__init__(value)
 
+class Address(Field):
+  pass
+
+
+class Email(Field):
+  pass
+
+
 class Record:
   def __init__(self, name):
     self.name = Name(name)
     self.phones = []
     self.birthday = None
-    self.address = None
     self.email = None
+    self.address = None
   
+
   def add_birthday(self, birthday):
     self.birthday = Birthday(birthday)
+
 
   def add_phone(self, phone):
     if not any(p.value == phone for p in self.phones):
@@ -118,18 +146,21 @@ class Record:
       return 'Birthday removed'
     return 'No birthday to remove'
   
+
   def find_phone(self, phone):
     for phone_obj in self.phones:
       if phone_obj.value == phone:
         return phone_obj
     return 'Contact do not have phones'
       
+
   def remove_phone(self, phone):
     rem_phone = self.find_phone(phone)
     if rem_phone:
       self.phones.remove(rem_phone)
       return 'Phone removed'
     return 'No phone to remove'  
+
 
   def edit_phone(self, old_phone, new_phone):
     phone_obj = self.find_phone(old_phone)
@@ -145,21 +176,53 @@ class Record:
   def edit_birthday(self, new_birthday):
     self.birthday = Birthday(new_birthday)     
 
+
   def __str__(self):
     birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
     email = self.email.value if self.email else '-'
     address = self.address.value if self.address else '-'
     phones = ';'.join(p.value for p in self.phones) if self.phones else '-'
     return f"Contact: {self.name.value}, Phones: {phones}, Email: {email}, Address: {address}, birthday: {birthday}"
-
+  
+  
 class AddressBook(UserDict):
   def add_record(self, record: Record):
     self.data[record.name.value] = record
 
+
   def find(self, name) -> Record:
     if name in self.data:
       return self.data[name]
+
+
+  def find_by_ph(self, phone) -> Record:
+    for contact in self.data.values():
+      if phone in [p.value for p in contact.phones]:
+        return contact
+    return None
+
+
+  def find_by_brthd(self, birthday) -> Record:
+    for contact in self.data.values():
+      if contact.birthday is not None and Birthday(birthday).value == contact.birthday.value:
+        yield contact
+    return (None,)
     
+
+  def find_by_mail(self, email) -> Record:
+    for contact in self.data.values():
+        if contact.email is not None and email == contact.email.value:
+          return contact
+    return None
+
+
+  def find_by_addr(self, address) -> Record:
+    for contact in self.data.values():
+      if contact.address is not None and address == contact.address.value:
+        return contact
+    return None
+
+
   def get_upcoming_birthdays(self, days):
         today = datetime.today().date()
         end_date = today + timedelta(days=days)
@@ -198,8 +261,8 @@ def input_error(func):
       return "Give me the name."
     except KeyError:
       return "No such contact."
-
   return inner
+
 
 def parse_input(user_input) -> tuple:
   user_input = user_input.strip()
@@ -209,15 +272,44 @@ def parse_input(user_input) -> tuple:
   cmd = cmd.strip().lower()
   return cmd, *args
 
+
 @input_error
-def add_contact(book: AddressBook):
-  name = input('Enter the name: ')
+# def add_contact(book: AddressBook):
+#   name = input('Enter the name: ')
+#   record = book.find(name)
+#   if record is None:
+#     record = Record(name)
+#     book.add_record(record)
+#     return f'Contact {name} added.'
+#   return "Contact alreade exists"
+def add_contact(args, book: AddressBook):
+  name, phone, email, *_ = args
   record = book.find(name)
+  message = "Contact updated."
+  if not phone.isdigit() or len(phone) != 10:
+    return 'Phone number must be 10 digits'
+  
+  if not re.match(r'(\w+)@(\w+\.\w+)', email):
+    return 'Invalid email format. Please use "example@domain.com".'
+  
   if record is None:
     record = Record(name)
     book.add_record(record)
-    return f'Contact {name} added.'
-  return "Contact alreade exists"
+    message = "Contact added."
+
+  if phone:
+    try:
+      record.add_phone(phone)
+    except ValueError:
+      return 'Invalid phone number. it must be 10 digits.'
+    
+  if email:
+    try:
+      record.add_email(email)
+    except ValueError:
+      return 'Invalid email format. Please use "example@domain.com".'
+  return message
+
 
 @input_error
 def remove_contact(book: AddressBook):
@@ -228,13 +320,31 @@ def remove_contact(book: AddressBook):
     return f'Contact {name} deleted.'
   return 'Contact not exists'
 
+def change_contact(args, book: AddressBook) -> str:
+  name, old_phone, new_phone = args
+  result = 'Сontact not found'
+  record: Record = book.find(name)
+  if record:
+    if not new_phone.isdigit() or len(new_phone) != 10:
+      return 'Phone number must be 10 digits.'
+    
+    try:
+      record.edit_phone(old_phone, new_phone)
+      result = 'Contact updated.'
+    except ValueError as e:
+      result = str(e)
+  return result
+
+
 @input_error
 def show_phone(args, book: AddressBook) -> str:
   name = args[0]
   record: Record = book.find(name)
   if record:
     result = f"phones: {'; '.join(p.value for p in record.phones)}"
-  return result 
+    return result 
+  return 'No contact with this phone number.'
+
 
 @input_error
 def show_all(book: AddressBook) -> str:
@@ -245,6 +355,7 @@ def show_all(book: AddressBook) -> str:
     return 'no contacts :('
   return result
 
+
 @input_error
 def show_birthday(args, book: AddressBook) -> str:
   name = args[0]
@@ -253,6 +364,7 @@ def show_birthday(args, book: AddressBook) -> str:
     birthday = record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'
     return birthday
   return 'The contact is not found'
+
 
 @input_error
 def birthdays(args, book):
@@ -479,27 +591,74 @@ def edit_contact_info(book: AddressBook):
   else:
     return 'No such contact'        
              
+
+def search_by_name(name: str, book) -> str:
+  record: Record = book.find(name)
+  if record:
+    return record
+  return 'No such contact.'
+
+
+def search_by_phone(phone: str, book) -> str:
+  record: Record = book.find_by_ph(phone)
+  if record:
+    return record
+  return f'No contact with this Phone: {phone}.'
+
+
+def search_by_birthday(birthday: str, book) -> str:
+  records = book.find_by_brthd(birthday)
+  if records == (None,):
+    return f'No contact with this Birthday: {birthday}.'
+  answer = ""
+  for record in records:
+    answer += record.__str__() + "\n"
+  return answer
+
+
+def search_by_email(email: str, book) -> str:
+  record: Record = book.find_by_mail(email)
+  if record:
+    return record
+  return f'No contact with this Email: {email}.'
+
+
+def search_by_address(address: str, book) -> str: 
+  record: Record = book.find_by_addr(address)
+  if record:
+    return record
+  return f'No contact with this Address: {address}.'
+
+
+@input_error
+def search(args, book: AddressBook) -> str:
+  comms = {'name': search_by_name, 'phone': search_by_phone, 'birthday': search_by_birthday, 'email': search_by_email, 'address': search_by_address}
+  return comms[args[0]](args[1], book)
+
+
+def suggest_command(user_input, commands):
+    best_match = process.extractOne(user_input, commands)
+    if best_match and best_match[1] > 60:  # Если схожесть больше 60%
+        return best_match[0]
+
+
 def save_data(book, filename="addressbook.pkl"):
   with open(filename, "wb") as f:
     pickle.dump(book, f)
+
 
 def load_data(filename="addressbook.pkl"):
   try:
     with open(filename, "rb") as f:
       return pickle.load(f)
   except FileNotFoundError:
-    return None  
+    return AddressBook()  # Повернення нової адресної книги, якщо файл не знайдено
   
-def suggest_command(user_input, commands):
-    best_match = process.extractOne(user_input, commands)
-    if best_match and best_match[1] > 60:  # Если схожесть больше 60%
-        return best_match[0]
-    return None
 
 def main():
   filedata = load_data() 
   book = filedata if filedata else AddressBook()
-  print("Welcome to the assistant bot!")
+  print("\nWelcome to the assistant bot!\nIf you need help, type 'help'.\n")
   while True:
     user_input = input("Enter a command: ")
     command, *args = parse_input(user_input)
@@ -520,12 +679,12 @@ def main():
 
     if command in ["close", "exit"]:
       save_data(book)
-      print("Good bye!")
+      print("Good bye!\nSaving data...")
       break
     elif command == "hello":
       print("How can I help you?")
     elif command == "add":
-      print(add_contact(book))
+      print(add_contact(args, book))
     elif command == "addall":
       print(add_all(book))
     elif command == "remove":
@@ -534,6 +693,8 @@ def main():
       print(edit_contact_info(book))    
     elif command == "delete":
       print(remove_contact(book))
+    elif command == "change":
+      print(change_contact(args, book))
     elif command == "phone":
       print(show_phone(args, book))
     elif command == "all":
@@ -541,7 +702,13 @@ def main():
     elif command == "show-birthday":
       print(show_birthday(args, book))
     elif command == "birthdays":
-      print(birthdays(args, book))         
+      print(birthdays(book))         
+    elif command == 'search':
+      print(search(args, book))
+    elif command == 'help':
+      print("Available commands:")
+      for cmd in COMMANDS:
+        print(f"- {cmd}")
     else:
       print("Invalid command.")
         
