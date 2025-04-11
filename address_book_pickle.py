@@ -8,6 +8,7 @@ table = PrettyTable()
 
 COMMANDS = [
     "hello",
+    'help',
     "add",
     "change",
     "phone",
@@ -15,6 +16,22 @@ COMMANDS = [
     "add-birthday",
     "show-birthday",
     "birthdays",
+    "search",
+    "exit",
+    "close"
+]
+
+COMMANDS_HELP = [
+    "hello",
+    'help',
+    "add [Name] [Phone]",
+    "change [Name] [Old Phone] [New Phone]",
+    "phone [Name]",
+    "all",
+    "add-birthday [Name] [Birthday]",
+    "show-birthday [Name]",
+    "birthdays",
+    "search [Name|Phone|Birthday|Email|Address] [Value]",
     "exit",
     "close"
 ]
@@ -61,6 +78,8 @@ class Record:
     self.name = Name(name)
     self.phones = []
     self.birthday = None
+    self.email = None
+    self.address = None
   
 
   def add_birthday(self, birthday):
@@ -92,7 +111,7 @@ class Record:
 
   def __str__(self):
     birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
-    return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {birthday}"#, email: {self.email.value if self.email else '-'}, address: {self.address.value if self.address else '-'}"
+    return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {birthday}, email: {self.email.value if self.email else '-'}, address: {self.address.value if self.address else '-'}"
 
 
 class AddressBook(UserDict):
@@ -270,14 +289,14 @@ def birthdays(args, book):
 def search_by_name(name: str, book) -> str:
   record: Record = book.find(name)
   if record:
-    return f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}"
+    return record
   return 'No such contact.'
 
 
 def search_by_phone(phone: str, book) -> str:
   record: Record = book.find_by_ph(phone)
   if record:
-    return f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}"
+    return record
   return f'No contact with this Phone: {phone}.'
 
 
@@ -287,21 +306,21 @@ def search_by_birthday(birthday: str, book) -> str:
     return f'No contact with this Birthday: {birthday}.'
   answer = ""
   for record in records:
-    answer += f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}\n"
+    answer += record.__str__() + "\n"
   return answer
 
 
 def search_by_email(email: str, book) -> str:
   record: Record = book.find_by_mail(email)
   if record:
-    return f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}"
+    return record
   return f'No contact with this Email: {email}.'
 
 
 def search_by_address(address: str, book) -> str: 
   record: Record = book.find_by_addr(address)
   if record:
-    return f"Contact name: {record.name.value}, phones: {'; '.join(p.value for p in record.phones)}, birthday: {record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'}"
+    return record
   return f'No contact with this Address: {address}.'
 
 @input_error
@@ -333,7 +352,7 @@ def load_data(filename="addressbook.pkl"):
 def main():
   filedata = load_data() 
   book = filedata if filedata else AddressBook()
-  print("Welcome to the assistant bot!")
+  print("\nWelcome to the assistant bot!\nIf you need help, type 'help'.\n")
   while True:
     user_input = input("Enter a command: ")
     command, *args = parse_input(user_input)
@@ -374,6 +393,10 @@ def main():
       print(birthdays(book))         
     elif command == 'search':
       print(search(args, book))
+    elif command == 'help':
+      print("Available commands:")
+      for cmd in COMMANDS_HELP:
+        print(f"- {cmd}")
     else:
       print("Invalid command.")
         
