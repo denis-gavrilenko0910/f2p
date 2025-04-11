@@ -1,6 +1,7 @@
 import pickle
 from collections import UserDict
 from datetime import datetime, timedelta
+import re
 from prettytable import PrettyTable
 from fuzzywuzzy import process
 table = PrettyTable()
@@ -88,7 +89,17 @@ class Record:
 
   def add_phone(self, phone):
     if phone not in [p.value for p in self.phones]:
-        self.phones.append(Phone(phone))
+      self.phones.append(Phone(phone))
+
+  def add_email(self, email):
+    if self.is_valid_email(email):
+        self.email = email
+    else:
+      raise ValueError('Invalid email format. Please use "example@domain.com".')
+    
+  def is_valid_email(self, email):
+    email_regex = r'(\w+)@(\w+\.\w+)'
+    return re.match(email_regex, email) is not None
 
 
   def find_phone(self, phone):
@@ -201,27 +212,65 @@ def parse_input(user_input) -> tuple:
 
 @input_error
 def add_contact(args, book: AddressBook):
-  name, phone, *_ = args
+  name, phone, email, *_ = args
   record = book.find(name)
   message = "Contact updated."
+  if not phone.isdigit() or len(phone) != 10:
+    return 'Phone number must be 10 digits'
+  
+  if not re.match(r'(\w+)@(\w+\.\w+)', email):
+    return 'Invalid email format. Please use "example@domain.com".'
+  
   if record is None:
     record = Record(name)
     book.add_record(record)
     message = "Contact added."
+
   if phone:
-    record.add_phone(phone)
+    try:
+      record.add_phone(phone)
+    except ValueError:
+      return 'Invalid phone number. it must be 10 digits.'
+    
+  if email:
+    try:
+      record.add_email(email)
+    except ValueError:
+      return 'Invalid email format. Please use "example@domain.com".'
   return message
 
 
 @input_error
 def change_contact(args, book: AddressBook) -> str:
   name, old_phone, new_phone = args
-  result = 'No contact found'
+  result = 'Сontact not found'
   record: Record = book.find(name)
   if record:
-    record.edit_phone(old_phone, new_phone)
-    result = 'Contact updated.'    
-  return result 
+    if not new_phone.isdigit() or len(new_phone) != 10:
+      return 'Phone number must be 10 digits.'
+    
+    try:
+      record.edit_phone(old_phone, new_phone)
+      result = 'Contact updated.'
+    except ValueError as e:
+      result = str(e)
+  return result
+
+@input_error
+def change_email(args, book: AddressBook) -> str:
+  name, new_email = args
+  record: Record = book.find(name)
+  if not re.match(r'(\w+)@(\w+\.\w+)', new_email):
+    return 'Invalid email format. Please use "example@domain.com".'
+  
+  if record:
+    try:
+      record.add_email(new_email)
+      return 'Email updated successfully.'
+    except ValueError:
+      return 'Invalid email format. Please use "example@domain.com".'
+  return 'Contact not found'
+
 
 
 @input_error
@@ -323,6 +372,7 @@ def search_by_address(address: str, book) -> str:
     return record
   return f'No contact with this Address: {address}.'
 
+
 @input_error
 def search(args, book: AddressBook) -> str:
   comms = {'name': search_by_name, 'phone': search_by_phone, 'birthday': search_by_birthday, 'email': search_by_email, 'address': search_by_address}
@@ -333,7 +383,7 @@ def suggest_command(user_input, commands):
     best_match = process.extractOne(user_input, commands)
     if best_match and best_match[1] > 60:  # Если схожесть больше 60%
         return best_match[0]
-    return None
+
 
 
 def save_data(book, filename="addressbook.pkl"):
@@ -381,6 +431,8 @@ def main():
       print(add_contact(args, book))
     elif command == "change":
       print(change_contact(args, book))
+    elif command == "change-email":
+      print(change_email(args, book))
     elif command == "phone":
       print(show_phone(args, book))
     elif command == "all":
