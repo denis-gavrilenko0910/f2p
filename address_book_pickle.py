@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import re
 from prettytable import PrettyTable
 from fuzzywuzzy import process
-table = PrettyTable()
 
 
 COMMANDS = [
@@ -17,7 +16,6 @@ COMMANDS = [
     "delete",
     "phone",
     "all",
-    "add-birthday",
     "show-birthday",
     "birthdays",
     "search",
@@ -25,20 +23,22 @@ COMMANDS = [
     "close"
 ]
 
-# COMMANDS_HELP = [
-#     "hello",
-#     'help',
-#     "add [Name] [Phone]",
-#     "change [Name] [Old Phone] [New Phone]",
-#     "phone [Name]",
-#     "all",
-#     "add-birthday [Name] [Birthday]",
-#     "show-birthday [Name]",
-#     "birthdays",
-#     "search [Name|Phone|Birthday|Email|Address] [Value]",
-#     "exit",
-#     "close"
-# ]
+HELP = [
+    "hello",
+    'help',
+    "add",
+    'addall',
+    'remove',
+    "edit",
+    'delete',
+    "phone [Name]",
+    "all",
+    "show-birthday [Name]",
+    "birthdays [Days]",
+    "search [Name|Phone|Birthday|Email|Address] [Value]",
+    "exit",
+    "close"
+]
 
 
 class Field:
@@ -282,33 +282,6 @@ def add_contact(book: AddressBook):
     book.add_record(record)
     return f'Contact {name} added.'
   return "Contact alreade exists"
-# def add_contact(args, book: AddressBook):
-#   name, phone, email, *_ = args
-#   record = book.find(name)
-#   message = "Contact updated."
-#   if not phone.isdigit() or len(phone) != 10:
-#     return 'Phone number must be 10 digits'
-  
-#   if not re.match(r'(\w+)@(\w+\.\w+)', email):
-#     return 'Invalid email format. Please use "example@domain.com".'
-  
-#   if record is None:
-#     record = Record(name)
-#     book.add_record(record)
-#     message = "Contact added."
-
-#   if phone:
-#     try:
-#       record.add_phone(phone)
-#     except ValueError:
-#       return 'Invalid phone number. it must be 10 digits.'
-    
-#   if email:
-#     try:
-#       record.add_email(email)
-#     except ValueError:
-#       return 'Invalid email format. Please use "example@domain.com".'
-#   return message
 
 
 @input_error
@@ -578,7 +551,7 @@ def edit_contact_info(book: AddressBook):
              
 
 def search_by_name(name: str, book) -> str:
-  record: Record = book.find(name)
+  record: Record = book.find(name.capitalize())
   if record:
     return record
   return 'No such contact.'
@@ -690,7 +663,7 @@ def main():
       print(search(args, book))
     elif command == 'help':
       print("Available commands:")
-      for cmd in COMMANDS:
+      for cmd in HELP:
         print(f"- {cmd}")
     else:
       print("Invalid command.")
