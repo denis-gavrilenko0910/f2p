@@ -6,41 +6,6 @@ from prettytable import PrettyTable
 from fuzzywuzzy import process
 
 
-COMMANDS = [
-    "hello",
-    'help',
-    "add",
-    "addall",
-    "remove",
-    "edit",
-    "delete",
-    "phone",
-    "all",
-    "show-birthday",
-    "birthdays",
-    "search",
-    "exit",
-    "close"
-]
-
-HELP = [
-    "hello",
-    'help',
-    "add",
-    'addall',
-    'remove',
-    "edit",
-    'delete',
-    "phone [Name]",
-    "all",
-    "show-birthday [Name]",
-    "birthdays [Days]",
-    "search [Name|Phone|Birthday|Email|Address] [Value]",
-    "exit",
-    "close"
-]
-
-
 class Field:
   def __init__(self, value):
     self.value = value
@@ -71,18 +36,12 @@ class Birthday(Field):
 class Address(Field):
   pass
 
+
 class Email(Field):
   def __init__(self, value):
     if not re.match(r'\w+@\w+\.\w+', value):
       raise ValueError('Invalid email format')
     super().__init__(value)
-
-class Address(Field):
-  pass
-
-
-class Email(Field):
-  pass
 
 
 class Record:
@@ -206,7 +165,7 @@ class AddressBook(UserDict):
       return self.data[name]
 
 
-  def find_by_ph(self, phone) -> Record:
+  def find_by_phone(self, phone) -> Record:
     for contact in self.data.values():
       if phone in [p.value for p in contact.phones]:
         return contact
@@ -269,8 +228,8 @@ def input_error(func):
   def inner(*args, **kwargs):
     try:
       return func(*args, **kwargs)
-    except ValueError:
-      return "Give me name and phone please."
+    except ValueError as err:
+      return str(err)
     except IndexError:
       return "Give me the name."
     except KeyError:
@@ -295,7 +254,7 @@ def add_contact(book: AddressBook):
     record = Record(name)
     book.add_record(record)
     return f'Contact {name} added.'
-  return "Contact alreade exists"
+  return "Contact already exists"
 
 
 @input_error
@@ -572,7 +531,7 @@ def search_by_name(name: str, book) -> str:
 
 
 def search_by_phone(phone: str, book) -> str:
-  record: Record = book.find_by_ph(phone)
+  record: Record = book.find_by_phone(phone)
   if record:
     return record.prettytable_for_search()
   return f'No contact with this Phone: {phone}.'
@@ -617,7 +576,7 @@ def search(args, book: AddressBook) -> str:
 
 def suggest_command(user_input, commands):
     best_match = process.extractOne(user_input, commands)
-    if best_match and best_match[1] > 60:  # Если схожесть больше 60%
+    if best_match and best_match[1] > 60:
         return best_match[0]
 
 
@@ -631,64 +590,64 @@ def load_data(filename="addressbook.pkl"):
     with open(filename, "rb") as f:
       return pickle.load(f)
   except FileNotFoundError:
-    return AddressBook()  # Повернення нової адресної книги, якщо файл не знайдено
+    return None
   
 
-def main():
-  filedata = load_data() 
-  book = filedata if filedata else AddressBook()
-  print("\nWelcome to the assistant bot!\nIf you need help, type 'help'.\n")
-  while True:
-    user_input = input("Enter a command: ")
-    command, *args = parse_input(user_input)
-    if command not in COMMANDS:
-            suggestion = suggest_command(command, COMMANDS)
-            if suggestion:
+# def main():
+#   filedata = load_data() 
+#   book = filedata if filedata else AddressBook()
+#   print("\nWelcome to the assistant bot!\nIf you need help, type 'help'.\n")
+#   while True:
+#     user_input = input("Enter a command: ")
+#     command, *args = parse_input(user_input)
+#     if command not in COMMANDS:
+#             suggestion = suggest_command(command, COMMANDS)
+#             if suggestion:
                 
-                choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
-                if choice == 'y':
-                    command = suggestion
-                else:
-                    print("Invalid command. Please try again.")
-                    continue
-            else:
-                print("Invalid command. Please try again.")
-                continue
+#                 choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
+#                 if choice == 'y':
+#                     command = suggestion
+#                 else:
+#                     print("Invalid command. Please try again.")
+#                     continue
+#             else:
+#                 print("Invalid command. Please try again.")
+#                 continue
             
 
-    if command in ["close", "exit"]:
-      save_data(book)
-      print("Good bye!\nSaving data...")
-      break
-    elif command == "hello":
-      print("How can I help you?")
-    elif command == "add":
-      print(add_contact(book))
-    elif command == "addall":
-      print(add_all(book))
-    elif command == "remove":
-      print(remove_contact_info(book))
-    elif command == "edit":
-      print(edit_contact_info(book))    
-    elif command == "delete":
-      print(remove_contact(book))
-    elif command == "phone":
-      print(show_phone(args, book))
-    elif command == "all":
-      print(show_all(book))
-    elif command == "show-birthday":
-      print(show_birthday(args, book))
-    elif command == "birthdays":
-      print(birthdays(args, book))         
-    elif command == 'search':
-      print(search(args, book))
-    elif command == 'help':
-      print("Available commands:")
-      for cmd in HELP:
-        print(f"- {cmd}")
-    else:
-      print("Invalid command.")
+#     if command in ["close", "exit"]:
+#       save_data(book)
+#       print("Good bye!\nSaving data...")
+#       break
+#     elif command == "hello":
+#       print("How can I help you?")
+#     elif command == "add":
+#       print(add_contact(book))
+#     elif command == "addall":
+#       print(add_all(book))
+#     elif command == "remove":
+#       print(remove_contact_info(book))
+#     elif command == "edit":
+#       print(edit_contact_info(book))    
+#     elif command == "delete":
+#       print(remove_contact(book))
+#     elif command == "phone":
+#       print(show_phone(args, book))
+#     elif command == "all":
+#       print(show_all(book))
+#     elif command == "show-birthday":
+#       print(show_birthday(args, book))
+#     elif command == "birthdays":
+#       print(birthdays(args, book))         
+#     elif command == 'search':
+#       print(search(args, book))
+#     elif command == 'help':
+#       print("Available commands:")
+#       for cmd in HELP:
+#         print(f"- {cmd}")
+#     else:
+#       print("Invalid command.")
         
 
-if __name__ == "__main__":
-  main()
+# if __name__ == "__main__":
+#   main()
