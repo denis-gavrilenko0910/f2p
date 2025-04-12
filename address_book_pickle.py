@@ -577,7 +577,11 @@ def search(args, book: AddressBook) -> str:
 def suggest_command(user_input, commands):
     best_match = process.extractOne(user_input, commands)
     if best_match and best_match[1] > 60:
-        return best_match[0]
+        print(f"Did you mean '{best_match[0]}'?")
+        return None  
+    else:
+        print("Invalid command. Please try again.")
+        return None 
 
 
 def save_data(book, filename="addressbook.pkl"):
@@ -601,19 +605,9 @@ def load_data(filename="addressbook.pkl"):
 #     user_input = input("Enter a command: ")
 #     command, *args = parse_input(user_input)
 #     if command not in COMMANDS:
-#             suggestion = suggest_command(command, COMMANDS)
-#             if suggestion:
-                
-#                 choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
-#                 if choice == 'y':
-#                     command = suggestion
-#                 else:
-#                     print("Invalid command. Please try again.")
-#                     continue
-#             else:
-#                 print("Invalid command. Please try again.")
-#                 continue
-            
+#        suggestion = suggest_command(command, COMMANDS)
+#        if suggestion is None:
+#           continue
 
 #     if command in ["close", "exit"]:
 #       save_data(book)

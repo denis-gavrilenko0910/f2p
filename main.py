@@ -54,19 +54,9 @@ def main():
     user_input = input("Enter a command: ")
     command, *args = parse_input(user_input)
     if command not in COMMANDS:
-            suggestion = suggest_command(command, COMMANDS)
-            if suggestion:
-                
-                choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
-                if choice == 'y':
-                    command = suggestion
-                else:
-                    print("Invalid command. Please try again.")
-                    continue
-            else:
-                print("Invalid command. Please try again.")
-                continue
-            
+       suggestion = suggest_command(command, COMMANDS)
+       if suggestion is None:
+          continue
 
     if command in ["close", "exit"]:
       save_data(book)
