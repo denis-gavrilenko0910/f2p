@@ -6,7 +6,6 @@ from prettytable import PrettyTable
 from fuzzywuzzy import process
 
 
-
 class Field:
   def __init__(self, value):
     self.value = value
@@ -33,6 +32,7 @@ class Birthday(Field):
       super().__init__(brth_date)
     except ValueError:
       raise ValueError("Invalid date format. Use DD.MM.YYYY")
+
 
 class Address(Field):
   pass
@@ -64,16 +64,20 @@ class Record:
     else:
       raise ValueError('This phone is already added')  
 
+
   def add_email(self, email):
     self.email = Email(email)
 
+
   def add_address(self, address):
     self.address = Address(address)
+
 
   def find_email(self):
     if self.email:
       return self.email
     return 'Contact do not have email'
+
 
   def remove_email(self):
     rem_email = self.find_email
@@ -82,11 +86,13 @@ class Record:
       return 'Email removed'
     return 'No email to remove'
 
+
   def find_address(self):
     if self.address:
       return self.address
     return 'Contact do not have address'
   
+
   def remove_address(self):
     rem_address = self.find_address
     if rem_address:
@@ -94,11 +100,13 @@ class Record:
       return 'Address removed'
     return 'No address to remove'
   
+
   def find_birthday(self):
     if self.birthday:
       return self.birthday
     return 'Contact does not have birthday'
   
+
   def remove_birthday(self):
     rem_birthday = self.find_birthday
     if rem_birthday:
@@ -127,14 +135,18 @@ class Record:
     if phone_obj:
       phone_obj.value = Phone(new_phone)
 
+
   def edit_email(self, new_email):
     self.email = Email(new_email)
+
 
   def edit_address(self, new_address):
     self.address = Address(new_address)
 
+
   def edit_birthday(self, new_birthday):
     self.birthday = Birthday(new_birthday) 
+
 
   def edit_name(self, new_name):
     if not new_name:
@@ -143,6 +155,7 @@ class Record:
       raise ValueError('new name is the same as current name')
     self.name = Name(new_name)
     
+
   def prettytable_for_search(self):
     table = PrettyTable()
     table.field_names = ["Name", "Phones", "Email", "Address", "Birthday"]
@@ -186,7 +199,6 @@ class AddressBook(UserDict):
       if contact.birthday is not None and birthday == contact.birthday.value.strftime('%d.%m' + '%Y' * bday_with_year):
         contacts.append(contact)
     return contacts
-    
     
 
   def find_by_mail(self, email) -> Record:
@@ -252,6 +264,7 @@ def parse_input(user_input) -> tuple:
   cmd = cmd.strip().lower()
   return cmd, *args
 
+
 def suggestion_name(book: AddressBook):
     while True:  
       name = input(f'\nEnter the name: \n').strip()
@@ -276,6 +289,7 @@ def suggestion_name(book: AddressBook):
     else:
         return name
 
+
 @input_error
 def remove_contact(book: AddressBook):
   name = input('\nWhich contact do you want to delete? \n').capitalize()
@@ -284,16 +298,6 @@ def remove_contact(book: AddressBook):
     book.delete(name)
     return f'\nContact {name} deleted.\n'
   return '\nContact not exists\n'
-
-
-# @input_error
-# def show_phone(args, book: AddressBook) -> str:
-#   name = args[0]
-#   record: Record = book.find(name)
-#   if record:
-#     result = f"phones: {'; '.join(p.value for p in record.phones)}"
-#     return result 
-#   return 'No contact with this phone number.'
 
 
 @input_error
@@ -316,16 +320,6 @@ def show_all(book: AddressBook) -> str:
   return '\n' + str(table) + '\n'
 
 
-# @input_error
-# def show_birthday(args, book: AddressBook) -> str:
-#   name = args[0]
-#   record: Record = book.find(name)
-#   if record:
-#     birthday = record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'
-#     return birthday
-#   return 'The contact is not found'
-
-
 @input_error
 def birthdays(args, book):
     if len(args) != 1:
@@ -346,6 +340,7 @@ def birthdays(args, book):
         table.add_row([name, birthday, days_left])
 
     return table
+
 
 @input_error
 def add_all(book: AddressBook):
@@ -394,13 +389,15 @@ def add_all(book: AddressBook):
         except ValueError:
           print(f'\nInvalid email format. Please enter a valid email: \n')
 
+
   def add_address():
       if record.address:
         return
       address = input(f'Enter address or press Enter to skip: \n')
       if address != '':
         record.add_address(address)
-        print(f'\n\Address {address} added.\n')
+        print(f'\nAddress {address} added.\n')
+
 
   def add_birthday():
       if record.birthday:
@@ -416,6 +413,7 @@ def add_all(book: AddressBook):
         except ValueError:
           print(f'\nInvalid date format. Please use DD.MM.YYYY.\n')
       
+
   add_phone()
   add_email()
   add_address()
@@ -487,6 +485,7 @@ def remove_contact_info(book: AddressBook):
         print(f"\nInvalid {e}.\n")
     
   return "\nNo such contact.\n"
+
 
 @input_error
 def edit_contact_info(book: AddressBook):
@@ -640,13 +639,6 @@ def suggest_command(user_input, commands):
     best_match = process.extract(user_input, commands)
     best_match = [match[0] for match in best_match if match[1] > 60]
     return best_match
-    # best_match = process.extractOne(user_input, commands)
-    # if best_match and best_match[1] > 60:
-    #     print(f"Did you mean '{best_match[0]}'?")
-    #     return None  
-    # else:
-    #     print("Invalid command. Please try again.")
-    #     return None 
 
 
 def save_data(book, filename="addressbook.pkl"):
@@ -660,68 +652,3 @@ def load_data(filename="addressbook.pkl"):
       return pickle.load(f)
   except FileNotFoundError:
     return None
-  
-  
-# def main():
-#   filedata = load_data() 
-#   book = filedata if filedata else AddressBook()
-#   print("\nWelcome to the assistant bot!\nIf you need help, type 'help'.\n")
-#   while True:
-#     user_input = input("Enter a command: ").strip().lower()
-#     if not user_input:
-#       print(f'Please enter a command')
-#       continue
-#     command, *args = parse_input(user_input)
-#     if command not in COMMANDS:
-#             suggestions = suggest_command(command, COMMANDS)
-#             if suggestions:
-#               for suggestion in suggestions:  
-#                 choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
-#                 if choice == 'y':
-#                   command = suggestion
-#                   break
-#                 elif choice == 'n':
-#                   continue
-#                 else:
-#                     print("Invalid command. Please try again.")
-#                     break
-#               else:
-#                 print("Invalid command. Please try again.")
-#                 continue
-#             else:
-#                 print("Invalid command. Please try again.")
-#                 continue
-#     try:
-#       if command in ["close", "exit"]:
-#         save_data(book)
-#         print("Good bye!\nSaving data...")
-#         break
-#       elif command == "hello":
-#         print("How can I help you?")
-#       elif command == "add":
-#         print(add_all(book))
-#       elif command == "remove":
-#         print(remove_contact_info(book))
-#       elif command == "edit":
-#         print(edit_contact_info(book))    
-#       elif command == "delete":
-#         print(remove_contact(book))
-#       elif command == "phone":
-#         print(show_phone(args, book))
-#       elif command == "all":
-#         print(show_all(book))
-#       elif command == "show-birthday":
-#         print(show_birthday(args, book))
-#       elif command == "birthdays":
-#         print(birthdays(args, book))         
-#       elif command == 'search':
-#         print(search(args, book))
-#       elif command == 'help':
-#         print("Available commands:")
-#         for cmd in HELP:
-#           print(f"- {cmd}")
-#     except Exception as e:
-#       print(f'{e}')      
-
-# if __name__ == "__main__":
-#   main()
