@@ -1,5 +1,5 @@
 import pickle
-from address_book_pickle import load_data, AddressBook, parse_input, suggest_command, save_data, add_contact, add_all, remove_contact_info, edit_contact_info, remove_contact, show_phone,show_all, show_birthday, birthdays, search
+from address_book_pickle import load_data, AddressBook, parse_input, suggest_command, save_data, add_all, remove_contact_info, edit_contact_info, remove_contact,show_all, birthdays, search
 from note_book import NoteBook, add_note, show_notes, delete_note, add_tag, find_by_tag
 
 
@@ -25,18 +25,20 @@ COMMANDS = [
 ]
 
 HELP = [
-    "hello - <>",
-    'help - <>',
+    "hello",
+    'help',
     "add",
-    'add-note',
     'remove',
     "edit",
     'delete',
-    "phone [Name]",
     "all",
-    "show-birthday [Name]",
     "birthdays [Days]",
     "search [Name|Phone|Birthday|Email|Address] [Value]",
+    'add-note [Note]',
+    'show-all-notes'
+    'delete-note [Note]',
+    'add-tag [Tag]',
+    'find-tag [Tag]',
     "exit",
     "close"
 ]
@@ -81,21 +83,19 @@ def main():
       elif command == "hello":
         print("How can I help you?")
       elif command == "add":
-        print(add_contact(book))
-      elif command == "addall":
         print(add_all(book))
       elif command == "remove":
         print(remove_contact_info(book))
-      elif command == "edit":
+      elif command == "edit": #Можна змінити тільки ту інформацію яка існує
         print(edit_contact_info(book))    
       elif command == "delete":
         print(remove_contact(book))
-      elif command == "phone":
-        print(show_phone(args, book))
+      # elif command == "phone":
+      #   print(show_phone(args, book))
       elif command == "all":
         print(show_all(book))
-      elif command == "show-birthday":
-        print(show_birthday(args, book))
+      # elif command == "show-birthday":
+      #   print(show_birthday(args, book))
       elif command == "birthdays":
         print(birthdays(args, book))         
       elif command == 'search':

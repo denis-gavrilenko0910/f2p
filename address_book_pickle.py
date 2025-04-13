@@ -274,14 +274,14 @@ def remove_contact(book: AddressBook):
   return '\nContact not exists\n'
 
 
-@input_error
-def show_phone(args, book: AddressBook) -> str:
-  name = args[0]
-  record: Record = book.find(name)
-  if record:
-    result = f"phones: {'; '.join(p.value for p in record.phones)}"
-    return result 
-  return 'No contact with this phone number.'
+# @input_error
+# def show_phone(args, book: AddressBook) -> str:
+#   name = args[0]
+#   record: Record = book.find(name)
+#   if record:
+#     result = f"phones: {'; '.join(p.value for p in record.phones)}"
+#     return result 
+#   return 'No contact with this phone number.'
 
 
 @input_error
@@ -304,14 +304,14 @@ def show_all(book: AddressBook) -> str:
   return '\n' + str(table) + '\n'
 
 
-@input_error
-def show_birthday(args, book: AddressBook) -> str:
-  name = args[0]
-  record: Record = book.find(name)
-  if record:
-    birthday = record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'
-    return birthday
-  return 'The contact is not found'
+# @input_error
+# def show_birthday(args, book: AddressBook) -> str:
+#   name = args[0]
+#   record: Record = book.find(name)
+#   if record:
+#     birthday = record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'
+#     return birthday
+#   return 'The contact is not found'
 
 
 @input_error
