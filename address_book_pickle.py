@@ -179,18 +179,15 @@ class AddressBook(UserDict):
   def add_record(self, record: Record):
     self.data[record.name.value] = record
 
-
   def find(self, name) -> Record:
     if name in self.data:
       return self.data[name]
-
 
   def find_by_phone(self, phone) -> Record:
     for contact in self.data.values():
       if phone in [p.value for p in contact.phones]:
         return contact
     return None
-
 
   def find_by_brthd(self, birthday) -> Record:
     bday_with_year = (len(birthday.split('.')) == 3 and len(birthday.split('.')[0]) == 2 and len(birthday.split('.')[1]) == 2 and len(birthday.split('.')[2]) == 4)
@@ -200,13 +197,11 @@ class AddressBook(UserDict):
         contacts.append(contact)
     return contacts
     
-
   def find_by_mail(self, email) -> Record:
     for contact in self.data.values():
-        if contact.email is not None and email == contact.email.value:
-          return contact
+      if contact.email is not None and email == contact.email.value:
+        return contact
     return None
-
 
   def find_by_addr(self, address) -> Record:
     for contact in self.data.values():
@@ -216,25 +211,23 @@ class AddressBook(UserDict):
 
 
   def get_upcoming_birthdays(self, days):
-        today = datetime.today().date()
-        end_date = today + timedelta(days=days)
-        list_of_birthdays = []
-
-        for record in self.data.values():
-            if record.birthday:
-                birthday = record.birthday.value.date()
-                birthday_this_year = birthday.replace(year=today.year)
-
-                if birthday_this_year < today:
-                    birthday_this_year = birthday_this_year.replace(year=today.year + 1)
-
-                if today <= birthday_this_year <= end_date:
-                    list_of_birthdays.append({
-                        "name": record.name.value,
-                        "birthday": birthday_this_year.strftime("%Y-%m-%d")
-                    })
-
-        return list_of_birthdays
+    today = datetime.today().date()
+    end_date = today + timedelta(days=days)
+    list_of_birthdays = []
+  
+    for record in self.data.values():
+      if record.birthday:
+        birthday = record.birthday.value.date()
+        birthday_this_year = birthday.replace(year=today.year)
+          
+        if birthday_this_year < today:
+          birthday_this_year = birthday_this_year.replace(year=today.year + 1)
+        if today <= birthday_this_year <= end_date:
+          list_of_birthdays.append({
+            "name": record.name.value,
+            "birthday": birthday_this_year.strftime("%Y-%m-%d")
+          })
+    return list_of_birthdays
 
 
   def delete(self, name):
@@ -266,28 +259,28 @@ def parse_input(user_input) -> tuple:
 
 
 def suggestion_name(book: AddressBook):
-    while True:  
-      name = input(f'\nEnter the name: \n').strip()
-      if not name:
-        print(f'\nName cannot be empty\n')
-        continue
-      name = name.capitalize()
-      break
-    if name in book.data:
-      return name
-    contacts = list(book.data.keys())
-    variants = process.extract(name, contacts, limit=None)
-    variants = [v[0] for v in variants if v[1]>=60]
-    for suggest_name in variants:
-        choice = input(f'\nDid you mean {suggest_name}? [Y/N]. Or press Enter to add new contact: \n').strip().upper()
-        if choice == 'Y':
-          return suggest_name 
-        elif choice == 'N':
-          continue
-        elif choice == '':
-          return name      
-    else:
-        return name
+  while True:  
+    name = input(f'\nEnter the name: \n').strip()
+    if not name:
+      print(f'\nName cannot be empty\n')
+      continue
+    name = name.capitalize()
+    break
+  if name in book.data:
+    return name
+  contacts = list(book.data.keys())
+  variants = process.extract(name, contacts, limit=None)
+  variants = [v[0] for v in variants if v[1]>=60]
+  for suggest_name in variants:
+    choice = input(f'\nDid you mean {suggest_name}? [Y/N]. Or press Enter to add new contact: \n').strip().upper()
+    if choice == 'Y':
+      return suggest_name 
+    elif choice == 'N':
+      continue
+    elif choice == '':
+      return name      
+  else:
+    return name
 
 
 @input_error
@@ -322,24 +315,22 @@ def show_all(book: AddressBook) -> str:
 
 @input_error
 def birthdays(args, book):
-    if len(args) != 1:
-        raise KeyError
-    days = int(args[0])
-    upcoming_birthdays = book.get_upcoming_birthdays(days)
-    if not upcoming_birthdays:
-        return f"No birthdays in the next {days} days."
-     
-    table = PrettyTable()
-    table.field_names = ["Name", "Birthday", "Days Left"]
-
-    
-    for entry in upcoming_birthdays:
-        name = entry["name"]
-        birthday = entry["birthday"]
-        days_left = (datetime.strptime(birthday, "%Y-%m-%d").date() - datetime.today().date()).days
-        table.add_row([name, birthday, days_left])
-
-    return table
+  if len(args) != 1:
+    raise KeyError
+  days = int(args[0])
+  upcoming_birthdays = book.get_upcoming_birthdays(days)
+  if not upcoming_birthdays:
+    return f"No birthdays in the next {days} days."
+   
+  table = PrettyTable()
+  table.field_names = ["Name", "Birthday", "Days Left"]
+  
+  for entry in upcoming_birthdays:
+    name = entry["name"]
+    birthday = entry["birthday"]
+    days_left = (datetime.strptime(birthday, "%Y-%m-%d").date() - datetime.today().date()).days
+    table.add_row([name, birthday, days_left])
+  return table
 
 
 @input_error
@@ -376,42 +367,42 @@ def add_all(book: AddressBook):
 
 
   def add_email():
-      if record.email:
-        return
-      while True:
-        email = input(f'Enter the valid email or press Enter to skip:: \n')
-        if email == '':
-          break
-        try:
-          record.add_email(email)
-          print(f'\nEmail {email} added.\n')
-          break
-        except ValueError:
-          print(f'\nInvalid email format. Please enter a valid email: \n')
+    if record.email:
+      return
+    while True:
+      email = input(f'Enter the valid email or press Enter to skip:: \n')
+      if email == '':
+        break
+      try:
+        record.add_email(email)
+        print(f'\nEmail {email} added.\n')
+        break
+      except ValueError:
+        print(f'\nInvalid email format. Please enter a valid email: \n')
 
 
   def add_address():
-      if record.address:
-        return
-      address = input(f'Enter address or press Enter to skip: \n')
-      if address != '':
-        record.add_address(address)
-        print(f'\nAddress {address} added.\n')
+    if record.address:
+      return
+    address = input(f'Enter address or press Enter to skip: \n')
+    if address != '':
+      record.add_address(address)
+      print(f'\nAddress {address} added.\n')
 
 
   def add_birthday():
-      if record.birthday:
-        return
-      birthday = input(f'Enter bitrhday DD.MM.YYYY or press Enter to skip: \n')
-      while True:
-        if birthday == '':
-          break
-        try:
-          record.add_birthday(birthday)
-          print(f'\nBirthday {birthday} added.\n')
-          break
-        except ValueError:
-          print(f'\nInvalid date format. Please use DD.MM.YYYY.\n')
+    if record.birthday:
+      return
+    birthday = input(f'Enter bitrhday DD.MM.YYYY or press Enter to skip: \n')
+    while True:
+      if birthday == '':
+        break
+      try:
+        record.add_birthday(birthday)
+        print(f'\nBirthday {birthday} added.\n')
+        break
+      except ValueError:
+        print(f'\nInvalid date format. Please use DD.MM.YYYY.\n')
       
 
   add_phone()

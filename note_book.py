@@ -2,7 +2,6 @@ from prettytable import PrettyTable
 from collections import UserDict
 from address_book_pickle import Field
 from datetime import datetime
-from address_book_pickle import load_data, save_data
 from address_book_pickle import input_error
 
 class Note(Field):
@@ -71,16 +70,16 @@ def show_notes(note_book: NoteBook):
 
 @input_error
 def find_by_tag(args, note_book):
-    if len(args) < 1:
-      raise ValueError('Please enter tag!')
-    tag = args[0]
-    table = PrettyTable()
-    table.field_names = ['id', 'note text', 'added at', 'tags']
-    for id, note_record in note_book.items():
-      if tag in note_record.tags:
-        tags_text = '\n'.join(note_record.tags)
-        table.add_row([id, note_record.note.value, note_record.ctreated.strftime('%d.%m.%Y %H:%M:%S'), tags_text])
-    return table
+  if len(args) < 1:
+    raise ValueError('Please enter tag!')
+  tag = args[0]
+  table = PrettyTable()
+  table.field_names = ['id', 'note text', 'added at', 'tags']
+  for id, note_record in note_book.items():
+    if tag in note_record.tags:
+      tags_text = '\n'.join(note_record.tags)
+      table.add_row([id, note_record.note.value, note_record.ctreated.strftime('%d.%m.%Y %H:%M:%S'), tags_text])
+  return table
 
 @input_error
 def delete_note(args, note_book: NoteBook):
@@ -91,8 +90,9 @@ def delete_note(args, note_book: NoteBook):
     raise ValueError('Tag ID must be a number')
   note = note_book.find_note(int(id))
   
+  
   if note:
-    note_book.delete_note(id)
+    note_book.delete_note(int(id))
     return 'Note deleted'
   return 'Note is not found'  
 
