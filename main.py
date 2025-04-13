@@ -4,43 +4,44 @@ from note_book import NoteBook, add_note, show_notes, delete_note, add_tag, find
 
 
 COMMANDS = [
-    "hello",
-    'help',
-    "add",
-    'add-note',
-    "remove",
-    "edit",
-    "delete",
-    "phone",
-    "all",
-    "show-birthday",
-    "birthdays",
-    "search",
-    'show-all-notes',
-    'delete-note',
-    'add-tag',
-    'find-tag',
-    "exit",
-    "close"
+  'hello',
+  'help',
+  'add',
+  'add-note',
+  'remove',
+  'edit',
+  'delete',
+  'phone',
+  'all',
+  'show-birthday',
+  'birthdays',
+  'search',
+  'show-all-notes',
+  'delete-note',
+  'add-tag',
+  'find-tag',
+  'exit',
+  'close'
 ]
 
+
 HELP = [
-    "hello",
-    'help',
-    "add",
-    'remove',
-    "edit",
-    'delete',
-    "all",
-    "birthdays [Days]",
-    "search [Name|Phone|Birthday|Email|Address] [Value]",
-    'add-note [Note]',
-    'show-all-notes'
-    'delete-note [ID]',
-    'add-tag [Tag]',
-    'find-tag [Tag]',
-    "exit",
-    "close"
+  'hello',
+  'help',
+  'add - <enter the name of a contact to add>',
+  'remove - <to remove a contact, enter the name of the contact>',
+  'edit - <this command is for editing a contact. Please type the name of the contact to edit>',
+  'delete - <to delete a contact, type the contact`s name>',
+  'all - <to see all contacts, enter this command>',
+  'birthdays [Days] - <to see upcoming birthdays within the specified range, enter the number of days>',
+  'search [Name|Phone|Birthday|Email|Address] [Value] - <this command allows you to find a contact using one of these parameters>',
+  'add-note [Note] - <to add a note, just use this command :) Type the command and the note, then hit the Enter/Return button>',
+  'show-all-notes - <to see all notes, simply type: show-all-notes>',
+  'delete-note [ID] - <to delete a note, type: delete-note followed by its numeric ID>',
+  'add-tag [Tag] - <to add a tag to your note, type this command and the tag you want to add>',
+  'find-tag [Tag] - <to find a note by tag, type this command and the tag>',
+  'exit - <if you`re fed up with this assistant, stay cool and just type: exit =)>',
+  'close - <to take a break, type: close>',
 ]
 
 
@@ -54,24 +55,24 @@ def main():
     user_input = input("Enter a command: ")
     command, *args = parse_input(user_input)
     if command not in COMMANDS:
-            suggestions = suggest_command(command, COMMANDS)
-            if suggestions:
-              for suggestion in suggestions:  
-                choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
-                if choice == 'y':
-                    command = suggestion
-                    break
-                elif choice == 'n':
-                  continue
-                else:
-                    print("Invalid command. Please try again.")
-                    break
-              else:
-                print("Invalid command. Please try again.")
-                continue
-            else:
-              print("Invalid command. Please try again.")
-              continue
+      suggestions = suggest_command(command, COMMANDS)
+      if suggestions:
+        for suggestion in suggestions:  
+          choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
+          if choice == 'y':
+            command = suggestion
+            break
+          elif choice == 'n':
+            continue
+          else:
+            print("Invalid command. Please try again.")
+            break
+        else:
+          print("Invalid command. Please try again.")
+          continue
+      else:
+        print("Invalid command. Please try again.")
+        continue
 
             
     try:
