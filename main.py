@@ -86,16 +86,12 @@ def main():
         print(add_all(book))
       elif command == "remove":
         print(remove_contact_info(book))
-      elif command == "edit": #Можна змінити тільки ту інформацію яка існує
+      elif command == "edit":
         print(edit_contact_info(book))    
       elif command == "delete":
         print(remove_contact(book))
-      # elif command == "phone":
-      #   print(show_phone(args, book))
       elif command == "all":
         print(show_all(book))
-      # elif command == "show-birthday":
-      #   print(show_birthday(args, book))
       elif command == "birthdays":
         print(birthdays(args, book))         
       elif command == 'search':
