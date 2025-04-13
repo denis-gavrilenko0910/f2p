@@ -614,6 +614,13 @@ def suggest_command(user_input, commands):
     best_match = process.extract(user_input, commands)
     best_match = [match[0] for match in best_match if match[1] > 60]
     return best_match
+    # best_match = process.extractOne(user_input, commands)
+    # if best_match and best_match[1] > 60:
+    #     print(f"Did you mean '{best_match[0]}'?")
+    #     return None  
+    # else:
+    #     print("Invalid command. Please try again.")
+    #     return None 
 
 
 def save_data(book, filename="addressbook.pkl"):
