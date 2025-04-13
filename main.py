@@ -36,7 +36,7 @@ HELP = [
     "search [Name|Phone|Birthday|Email|Address] [Value]",
     'add-note [Note]',
     'show-all-notes'
-    'delete-note [Note]',
+    'delete-note [ID]',
     'add-tag [Tag]',
     'find-tag [Tag]',
     "exit",
