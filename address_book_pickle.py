@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import re
 from prettytable import PrettyTable
 from fuzzywuzzy import process
+from colorama import Back, Fore, Style
 
 
 class Field:
@@ -142,7 +143,7 @@ class Record:
     birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
     email = self.email.value if self.email else '-'
     address = self.address.value if self.address else '-'
-    phones = ';'.join(p.value for p in self.phones) if self.phones else '-'
+    phones = '\n'.join(str(p.value) for p in self.phones) if self.phones else '-'
     table.add_row([self.name.value, phones, email, address, birthday])
     return table
   
@@ -151,7 +152,7 @@ class Record:
     birthday = self.birthday.value.strftime('%d.%m.%Y') if self.birthday else '-'
     email = self.email.value if self.email else '-'
     address = self.address.value if self.address else '-'
-    phones = ';'.join(p.value for p in self.phones) if self.phones else '-'
+    phones = '\n'.join(p.value for p in self.phones) if self.phones else '-'
     return f"Contact: {self.name.value}, Phones: {phones}, Email: {email}, Address: {address}, birthday: {birthday}"
   
   
@@ -231,9 +232,9 @@ def input_error(func):
     except ValueError as err:
       return str(err)
     except IndexError:
-      return "Give me the name."
+      return "\nGive me the name.\n"
     except KeyError:
-      return "No such contact."
+      return "\nNo such contact.\n"
   return inner
 
 
@@ -245,26 +246,32 @@ def parse_input(user_input) -> tuple:
   cmd = cmd.strip().lower()
   return cmd, *args
 
-
-@input_error
-def add_contact(book: AddressBook):
-  name = input('Enter the name: ')
-  record = book.find(name)
-  if record is None:
-    record = Record(name)
-    book.add_record(record)
-    return f'Contact {name} added.'
-  return "Contact already exists"
-
+def suggestion_name(book: AddressBook):
+    name = input(f'\nEnter the name: \n').capitalize()
+    if name in book.data:
+      return name
+    contacts = list(book.data.keys())
+    variants = process.extract(name, contacts, limit=None)
+    variants = [v[0] for v in variants if v[1]>=60]
+    for suggest_name in variants:
+        choice = input(f'\nDid you mean {suggest_name}? [Y/N]. Or press Enter to add new contact: \n').strip().upper()
+        if choice == 'Y':
+          return suggest_name 
+        elif choice == 'N':
+          continue
+        elif choice == '':
+          return name      
+    else:
+        return name
 
 @input_error
 def remove_contact(book: AddressBook):
-  name = input('Which contact do you want to delete? ')
+  name = input('\nWhich contact do you want to delete? \n').capitalize()
   record = book.find(name)
   if record:
     book.delete(name)
-    return f'Contact {name} deleted.'
-  return 'Contact not exists'
+    return f'\nContact {name} deleted.\n'
+  return '\nContact not exists\n'
 
 
 @input_error
@@ -279,12 +286,22 @@ def show_phone(args, book: AddressBook) -> str:
 
 @input_error
 def show_all(book: AddressBook) -> str:
-  result = ''
-  for name, record in book.data.items():
-    result += f'{record}\n'
-  if not result:
-    return 'no contacts :('
-  return result
+  if not book.data:
+    return "\nNo contacts found :(\n"
+  table = PrettyTable()
+  table.title = "CONTACTS"
+  table.field_names = ['NAME', 'PHONES', 'EMAIL', 'ADDRESS', 'BIRTHDAY']
+  table.align = 'c'
+  table.hrules = 1
+
+  for record in book.data.values():
+    birthday = record.birthday.value.strftime('%d.%m.%Y') if record.birthday else '-'
+    email = record.email.value if record.email else '-'
+    address = record.address.value if record.address else '-'
+    phones = '\n'.join(str(p.value) for p in record.phones) if record.phones else '-'
+
+    table.add_row([record.name.value, phones, email, address, birthday])
+  return '\n' + str(table) + '\n'
 
 
 @input_error
@@ -320,207 +337,226 @@ def birthdays(args, book):
 
 @input_error
 def add_all(book: AddressBook):
-  name = input('Enter the name where you want add informations: ').capitalize()
+  name = suggestion_name(book)
   record = book.find(name)
+  
   if record is None:
     record = Record(name)
     book.add_record(record)
-    print(f'Contact {name} added.')
+    print(f'\n{Fore.GREEN}Contact {name} added.{Style.RESET_ALL}\n')
+  else:
+    print(f'\n{Fore.BLUE}Contact {name} already exist. Go add rest info.{Style.RESET_ALL}')
+    print(record.prettytable_for_search())
+    print()
 
+
+  def add_phone():
+    if len(record.phones) == 2:
+      return f'\n{Fore.YELLOW}Max 2 phones for contact{Style.RESET_ALL}\n'
+    
     while True:
-      phone = input('Enter valid phone number or press Enter to skip: ')
+      validation = f'{Fore.BLUE}Enter' + (' EXTENSION' if len(record.phones) >= 1 else "") + f' phone number or press {Fore.YELLOW}Enter{Fore.BLUE} to skip: {Style.RESET_ALL}\n'
+      phone = input(validation)
       if phone == '':
         break
       try:
         record.add_phone(phone)
-        print(f'Phone {phone} added.')
+        print(f'\n{Fore.GREEN}Phone {phone} added.{Style.RESET_ALL}\n')
+        if len(record.phones) == 2:
+          return f'\n{Fore.YELLOW}Max 2 phones for contact{Style.RESET_ALL}\n'
       except ValueError:
-        print('Invalid phone number. Please enter a valid 10-digit number ')
+        print(f'\n{Fore.RED}Invalid phone number. Please enter a valid 10-digit number.{Style.RESET_ALL}\n')
 
-    while True:
-      email = input('Enter valid email or press Enter to skip: ')
-      if email == '':
-        break
-      try:
-        record.add_email(email)
-        print(f'Email {email} added')
-        break
-      except ValueError:
-        print('Invalid email format. Please enter a valid email: ')
 
-    address = input('Enter address or press Enter to skip: ')
-    if address != '':
-      record.add_address(address)
-      print(f'Address {address} added.')
+  def add_email():
+      if record.email:
+        return
+      while True:
+        email = input(f'{Fore.BLUE}Enter the valid email or press {Fore.YELLOW}Enter{Fore.BLUE} to skip:: {Style.RESET_ALL}\n')
+        if email == '':
+          break
+        try:
+          record.add_email(email)
+          print(f'\n{Fore.GREEN}Email {email} added.{Style.RESET_ALL}\n')
+          break
+        except ValueError:
+          print(f'\n{Fore.RED}Invalid email format. Please enter a valid email: {Style.RESET_ALL}\n')
 
-    birthday = input('Enter bitrhday DD.MM.YYYY or press Enter to skip: ')
-    while True:
-      if birthday == '':
-        break
-      try:
-        record.add_birthday(birthday)
-        print(f'Birthday {birthday} added.')
-        break
-      except ValueError:
-        print('Invalid date format. Please use DD.MM.YYYY .')
-  else:
-    return 'Contact already exists.'      
+  def add_address():
+      if record.address:
+        return
+      address = input(f'{Fore.BLUE}Enter address or press {Fore.YELLOW}Enter{Fore.BLUE} to skip: {Style.RESET_ALL}\n')
+      if address != '':
+        record.add_address(address)
+        print(f'\n{Fore.GREEN}Address {address} added.{Style.RESET_ALL}\n')
+
+  def add_birthday():
+      if record.birthday:
+        return
+      birthday = input(f'{Fore.BLUE}Enter bitrhday DD.MM.YYYY or press {Fore.YELLOW}Enter{Fore.BLUE} to skip: {Style.RESET_ALL}\n')
+      while True:
+        if birthday == '':
+          break
+        try:
+          record.add_birthday(birthday)
+          print(f'\n{Fore.GREEN}Birthday {birthday} added.{Style.RESET_ALL}\n')
+          break
+        except ValueError:
+          print(f'\n{Fore.RED}Invalid date format. Please use DD.MM.YYYY.{Style.RESET_ALL}\n')
+      
+  add_phone()
+  add_email()
+  add_address()
+  add_birthday()
+  print(record.prettytable_for_search())
+  return f'{Fore.GREEN}Contact {name} with information succesfully added.{Style.RESET_ALL}\n'
+          
 
 @input_error
 def remove_contact_info(book: AddressBook):
-  name = input('Which contact do you want to edit? ').capitalize()
+  name = suggestion_name(book)
   record = book.find(name)
   if record:
-    info_type = input('What do you want to remove? (phone, email, address, birthday)').lower()
+    print()
+    print(record.prettytable_for_search())
+    while True: 
+      info_type = input('\nWhat do you want to remove? (phone, email, address, birthday): \n').lower()
+      try:
+        if info_type == 'phone':
+          if not record.phones:
+            return f'\nContact {name} has no phone.\n'
+          elif len(record.phones) == 1:
+            phone_to_remove = record.phones[0].value
+            record.remove_phone(phone_to_remove)
+            print()
+            print(record.prettytable_for_search()) 
+            return f'Phone {phone_to_remove} removed from {name}\n'
+          elif len(record.phones) > 1:
+            for phone in record.phones:
+              print(phone.value)
+            phone = input('\nEnter the phone number you want to remove: \n')
+            record.remove_phone(phone)
+            print()
+            print(record.prettytable_for_search()) 
+            return f'Phone {phone} removed from {name}\n'
+
+        elif info_type == 'email':
+          if record.email:
+            record.remove_email()
+            print()
+            print(record.prettytable_for_search()) 
+            return f'Email removed from {name}.\n'
+          else:
+            return f'\nContact {name} has no email.\n'
+
+        elif info_type == 'address':
+          if record.address:
+            record.remove_address()
+            print()
+            print(record.prettytable_for_search()) 
+            return f'Address removed from {name}.\n'
+          else:
+            return f'\nContact {name} has no address.\n'
+
+        elif info_type == 'birthday':
+          if record.birthday:
+            record.remove_birthday()
+            print()
+            print(record.prettytable_for_search()) 
+            return f'Birthday removed from {name}.\n'
+          else:
+            return f'\nContact {name} has no birthday.\n'
+          
+        else:
+          print('\nUse only:  phone  email  address  birthday\n')
+          continue
+
+      except Exception as e:
+        print(f"\nInvalid {e}.\n")
     
-    if info_type == 'phone':
-      if len(record.phones) == 1:
-        record.remove_phone(record.phones[0].value)
-        return f'Phone {record.phones[0].value} removed from {name}'
-      elif len(record.phones) > 1:
-        for phone in record.phones:
-          print(phone.value)
-        phone = input('Enter the phone number you want to remove: ')
-        return record.remove_phone(phone)
-      else:
-        return f'Contact {name} has no phone.'
-
-    elif info_type == 'email':
-      if record.email:
-        record.remove_email()
-        return f'Email removed from {name}.'
-      else:
-        return f'Contact {name} has no email.'
-
-    elif info_type == 'address':
-      if record.address:
-        record.remove_address()
-        return f'Address removed from {name}.'
-      else:
-        return f'Contact {name} has no address.'
-
-    elif info_type == 'birthday':
-      if record.birthday:
-        record.remove_birthday()
-        return f'Birthday removed from {name}.'
-      else:
-        return f'Contact {name} has no birthday.'
-
-    else:
-      return "Invalid option. Please choose from: phone, email, address, birthday"
-    
-  return "No such contact."
+  return "\nNo such contact.\n"
 
 @input_error
 def edit_contact_info(book: AddressBook):
-  name = input('Enter the contact name: ').capitalize()
+  name = suggestion_name(book)
   record = book.find(name)
+
   if record:
-    info_type = input('What do you want to edit? (phone, email, address, birthday)').lower()
-
-    if info_type == 'phone':
-      if record.phones:
-        print(f'{name} phone numders:')
-        for phone in record.phones:
-          print(f'- {phone.value}')
-        choice = input('Do you want to add or change? (add/change): ').lower()
-        if choice == "add":
-          while True:
-            new_phone = input('Enter phone number: ')
-            try:
-              record.add_phone(new_phone)
-              return f'Phone {new_phone} added to {name}'
-            except ValueError:
-              print('Invalid phone number. Please use 10-digit phone')
-        elif choice == 'change':
-          while True:
-            old_phone = input('Enter phone number you want to change: ')
-            new_phone = input('Enter the new phone number: ')
-            try:
-              record.edit_phone(old_phone, new_phone)
-              return f"{old_phone} changed to {new_phone}"
-            except ValueError:  
-              print('Invalid phone number. Please use 10-digit phone')
-            except AttributeError:
-              print('No such phone number')
-      else:
-        while True:
-          new_phone = input('Enter phone number: ') 
-          try:
-            record.add_phone(new_phone)
-            return f'Phone {new_phone} added to {name}.'
-          except ValueError:  
-                print('Invalid phone number. Please use 10-digit phone')
-    
-    elif info_type == 'email':
-      choice = input('Do you want add or change? (add/change): ').lower()
-      if choice == 'add':
-        if not record.email:
-          while True:
-            new_email = input('Enter valid email: ')
-            try:
-              record.add_email(new_email)
-              return f'{new_email} added to {name}'
-            except ValueError:
-              print('Ivalid email format.')
-        else:
-          return f'{name} have email'
-      elif choice == 'change':
-        if record.email:
-          while True:
-            new_email = input('Enter valid email: ')
-            try:
-              record.edit_email(new_email)
-              return f'{new_email} changed to {name}'
-            except ValueError:
-              print('Ivalid email format.')
-        else:
-          return f'{name} have not email'
+    print()
+    print(record.prettytable_for_search())
+    while True: 
+      info_type = input('\nWhat do you want to edit? (phone, email, address, birthday): \n').lower()
+      try:
+        if info_type == 'phone':
+          if record.phones:
+            print(f'\n{name} phone numders:')
+            for phone in record.phones:
+              print(phone.value)
+            while True:
+                old_phone = input('\nEnter phone number you want to change: \n')
+                new_phone = input('\nEnter the new phone number: \n')
+                try:
+                  record.edit_phone(old_phone, new_phone)
+                  print()
+                  print(record.prettytable_for_search()) 
+                  return f"Phone {old_phone} changed to phone {new_phone}\n"
+                except ValueError:  
+                  print('\nInvalid phone number. Please use 10-digit phone\n')
+                except AttributeError:
+                  print('\nNo such phone number\n')
         
-    elif info_type == 'birthday':
-      choice = input('Do you want add or change? (add/change): ').lower()
-      if choice == 'add':
-        if not record.birthday:
-          while True:
-            new_birthday = input('Enter birthday format DD.MM.YYYY: ')
-            try:
-              record.add_birthday(new_birthday)
-              return f'{new_birthday} added to {name}'
-            except ValueError:
-              print('Ivalid birthday format. Please use DD.MM.YYYY')
-        else:
-          return f'{name} have birthday'
-      elif choice == 'change':
-        if record.birthday:
-          while True:
-            new_birthday = input('Enter birthday format DD.MM.YYYY: ')
-            try:
-              record.edit_birthday(new_birthday)
-              return f'{new_birthday} changed to {name}'
-            except ValueError:
-              print('Ivalid birthday format. Please use DD.MM.YYYY')
-        else:
-          return f'{name} have not email' 
+        elif info_type == 'email':
+            if record.email:
+              print()
+              print(record.prettytable_for_search()) 
+              while True:
+                new_email = input('\nEnter valid email: \n')
+                try:
+                  record.edit_email(new_email)
+                  print()
+                  print(record.prettytable_for_search()) 
+                  return f'Email {new_email} changed to {name}\n'
+                except ValueError:
+                  print('\nIvalid email format.\n')
+            else:
+              return f'\n{name} has no email.\n'
+            
+        elif info_type == 'birthday':
+            if record.birthday:
+              print()
+              print(record.prettytable_for_search()) 
+              while True:
+                new_birthday = input('\nEnter birthday format DD.MM.YYYY: \n')
+                try:
+                  record.edit_birthday(new_birthday)
+                  print()
+                  print(record.prettytable_for_search()) 
+                  return f'Birthday {new_birthday} changed to {name}\n'
+                except ValueError:
+                  print('\nIvalid birthday format. Please use DD.MM.YYYY.\n')
+            else:
+              return f'\n{name} have not birthday.\n' 
 
-    elif info_type == 'address':
-      choice = input('Do you want add or change? (add/change): ').lower()
-      if choice == 'add':
-        if not record.address:
-          new_address = input('Enter address: ')
-          record.add_address(new_address)
-          return f'{new_address} added to {name}.'
-        else:
-          print(f'{name} have address')
-      elif choice == 'change':
-        if record.address:
-          new_address = input('Enter address: ')
-          record.edit_address(new_address)
-          return f'{new_address} changed to {name}.'
-        else:
-          print(f'{name} have not address')
+        elif info_type == 'address':
+            if record.address:
+              print()
+              print(record.prettytable_for_search()) 
+              new_address = input('\nEnter address: \n')
+              record.edit_address(new_address)
+              print()
+              print(record.prettytable_for_search()) 
+              return f'Address {new_address} changed to {name}.\n'
+            else:
+              print(f'\n{name} have not address\n')
 
+        else:
+            print('\nUse only:  phone  email  address  birthday\n')
+            continue
+
+      except Exception as e:
+        print(f"\nInvalid {e}.\n")     
   else:
-    return 'No such contact'        
+    return '\nNo such contact\n'        
              
 
 def search_by_name(name: str, book) -> str:
@@ -575,13 +611,16 @@ def search(args, book: AddressBook) -> str:
 
 
 def suggest_command(user_input, commands):
-    best_match = process.extractOne(user_input, commands)
-    if best_match and best_match[1] > 60:
-        print(f"Did you mean '{best_match[0]}'?")
-        return None  
-    else:
-        print("Invalid command. Please try again.")
-        return None 
+    best_match = process.extract(user_input, commands)
+    best_match = [match[0] for match in best_match if match[1] > 60]
+    return best_match
+    # best_match = process.extractOne(user_input, commands)
+    # if best_match and best_match[1] > 60:
+    #     print(f"Did you mean '{best_match[0]}'?")
+    #     return None  
+    # else:
+    #     print("Invalid command. Please try again.")
+    #     return None 
 
 
 def save_data(book, filename="addressbook.pkl"):
@@ -596,7 +635,7 @@ def load_data(filename="addressbook.pkl"):
   except FileNotFoundError:
     return None
   
-
+  
 # def main():
 #   filedata = load_data() 
 #   book = filedata if filedata else AddressBook()
@@ -605,43 +644,55 @@ def load_data(filename="addressbook.pkl"):
 #     user_input = input("Enter a command: ")
 #     command, *args = parse_input(user_input)
 #     if command not in COMMANDS:
-#        suggestion = suggest_command(command, COMMANDS)
-#        if suggestion is None:
-#           continue
-
-#     if command in ["close", "exit"]:
-#       save_data(book)
-#       print("Good bye!\nSaving data...")
-#       break
-#     elif command == "hello":
-#       print("How can I help you?")
-#     elif command == "add":
-#       print(add_contact(book))
-#     elif command == "addall":
-#       print(add_all(book))
-#     elif command == "remove":
-#       print(remove_contact_info(book))
-#     elif command == "edit":
-#       print(edit_contact_info(book))    
-#     elif command == "delete":
-#       print(remove_contact(book))
-#     elif command == "phone":
-#       print(show_phone(args, book))
-#     elif command == "all":
-#       print(show_all(book))
-#     elif command == "show-birthday":
-#       print(show_birthday(args, book))
-#     elif command == "birthdays":
-#       print(birthdays(args, book))         
-#     elif command == 'search':
-#       print(search(args, book))
-#     elif command == 'help':
-#       print("Available commands:")
-#       for cmd in HELP:
-#         print(f"- {cmd}")
-#     else:
-#       print("Invalid command.")
-        
+#             suggestions = suggest_command(command, COMMANDS)
+#             if suggestions:
+#               for suggestion in suggestions:  
+#                 choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
+#                 if choice == 'y':
+#                     command = suggestion
+#                     break
+#                 elif choice == 'n':
+#                   continue
+#                 else:
+#                     print("Invalid command. Please try again.")
+#                     break
+#               else:
+#                 print("Invalid command. Please try again.")
+#               continue
+#             else:
+#                 print("Invalid command. Please try again.")
+#                 continue
+#     try:
+#       if command in ["close", "exit"]:
+#         save_data(book)
+#         print("Good bye!\nSaving data...")
+#         break
+#       elif command == "hello":
+#         print("How can I help you?")
+#       elif command == "add":
+#         print(add_all(book))
+#       elif command == "remove":
+#         print(remove_contact_info(book))
+#       elif command == "edit":
+#         print(edit_contact_info(book))    
+#       elif command == "delete":
+#         print(remove_contact(book))
+#       elif command == "phone":
+#         print(show_phone(args, book))
+#       elif command == "all":
+#         print(show_all(book))
+#       elif command == "show-birthday":
+#         print(show_birthday(args, book))
+#       elif command == "birthdays":
+#         print(birthdays(args, book))         
+#       elif command == 'search':
+#         print(search(args, book))
+#       elif command == 'help':
+#         print("Available commands:")
+#         for cmd in HELP:
+#           print(f"- {cmd}")
+#     except Exception as e:
+#       print(f'{e}')      
 
 # if __name__ == "__main__":
 #   main()
