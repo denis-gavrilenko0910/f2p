@@ -66,7 +66,7 @@ def main():
                     break
               else:
                 print("Invalid command. Please try again.")
-              continue
+                continue
             else:
               print("Invalid command. Please try again.")
               continue

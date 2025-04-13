@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import re
 from prettytable import PrettyTable
 from fuzzywuzzy import process
-from colorama import Back, Fore, Style
+
 
 
 class Field:
@@ -134,9 +134,15 @@ class Record:
     self.address = Address(new_address)
 
   def edit_birthday(self, new_birthday):
-    self.birthday = Birthday(new_birthday)     
+    self.birthday = Birthday(new_birthday) 
 
-
+  def edit_name(self, new_name):
+    if not new_name:
+      raise ValueError('Name can not be empty') 
+    if new_name == self.name.value:
+      raise ValueError('new name is the same as current name')
+    self.name = Name(new_name)
+    
   def prettytable_for_search(self):
     table = PrettyTable()
     table.field_names = ["Name", "Phones", "Email", "Address", "Birthday"]
@@ -247,7 +253,13 @@ def parse_input(user_input) -> tuple:
   return cmd, *args
 
 def suggestion_name(book: AddressBook):
-    name = input(f'\nEnter the name: \n').capitalize()
+    while True:  
+      name = input(f'\nEnter the name: \n').strip()
+      if not name:
+        print(f'\nName cannot be empty\n')
+        continue
+      name = name.capitalize()
+      break
     if name in book.data:
       return name
     contacts = list(book.data.keys())
@@ -343,73 +355,73 @@ def add_all(book: AddressBook):
   if record is None:
     record = Record(name)
     book.add_record(record)
-    print(f'\n{Fore.GREEN}Contact {name} added.{Style.RESET_ALL}\n')
+    print(f'\nContact {name} added.\n')
   else:
-    print(f'\n{Fore.BLUE}Contact {name} already exist. Go add rest info.{Style.RESET_ALL}')
+    print(f'\nContact {name} already exist. Go add rest info.')
     print(record.prettytable_for_search())
     print()
 
 
   def add_phone():
     if len(record.phones) == 2:
-      return f'\n{Fore.YELLOW}Max 2 phones for contact{Style.RESET_ALL}\n'
+      return f'\nMax 2 phones for contact.\n'
     
     while True:
-      validation = f'{Fore.BLUE}Enter' + (' EXTENSION' if len(record.phones) >= 1 else "") + f' phone number or press {Fore.YELLOW}Enter{Fore.BLUE} to skip: {Style.RESET_ALL}\n'
+      validation = f'Enter' + (' EXTENSION' if len(record.phones) >= 1 else "") + f' phone number or press Enter to skip: \n'
       phone = input(validation)
       if phone == '':
         break
       try:
         record.add_phone(phone)
-        print(f'\n{Fore.GREEN}Phone {phone} added.{Style.RESET_ALL}\n')
+        print(f'\nPhone {phone} added.\n')
         if len(record.phones) == 2:
-          return f'\n{Fore.YELLOW}Max 2 phones for contact{Style.RESET_ALL}\n'
+          return f'\nMax 2 phones for contact.\n'
       except ValueError:
-        print(f'\n{Fore.RED}Invalid phone number. Please enter a valid 10-digit number.{Style.RESET_ALL}\n')
+        print(f'\nInvalid phone number. Please enter a valid 10-digit number.\n')
 
 
   def add_email():
       if record.email:
         return
       while True:
-        email = input(f'{Fore.BLUE}Enter the valid email or press {Fore.YELLOW}Enter{Fore.BLUE} to skip:: {Style.RESET_ALL}\n')
+        email = input(f'Enter the valid email or press Enter to skip:: \n')
         if email == '':
           break
         try:
           record.add_email(email)
-          print(f'\n{Fore.GREEN}Email {email} added.{Style.RESET_ALL}\n')
+          print(f'\nEmail {email} added.\n')
           break
         except ValueError:
-          print(f'\n{Fore.RED}Invalid email format. Please enter a valid email: {Style.RESET_ALL}\n')
+          print(f'\nInvalid email format. Please enter a valid email: \n')
 
   def add_address():
       if record.address:
         return
-      address = input(f'{Fore.BLUE}Enter address or press {Fore.YELLOW}Enter{Fore.BLUE} to skip: {Style.RESET_ALL}\n')
+      address = input(f'Enter address or press Enter to skip: \n')
       if address != '':
         record.add_address(address)
-        print(f'\n{Fore.GREEN}Address {address} added.{Style.RESET_ALL}\n')
+        print(f'\n\Address {address} added.\n')
 
   def add_birthday():
       if record.birthday:
         return
-      birthday = input(f'{Fore.BLUE}Enter bitrhday DD.MM.YYYY or press {Fore.YELLOW}Enter{Fore.BLUE} to skip: {Style.RESET_ALL}\n')
+      birthday = input(f'Enter bitrhday DD.MM.YYYY or press Enter to skip: \n')
       while True:
         if birthday == '':
           break
         try:
           record.add_birthday(birthday)
-          print(f'\n{Fore.GREEN}Birthday {birthday} added.{Style.RESET_ALL}\n')
+          print(f'\nBirthday {birthday} added.\n')
           break
         except ValueError:
-          print(f'\n{Fore.RED}Invalid date format. Please use DD.MM.YYYY.{Style.RESET_ALL}\n')
+          print(f'\nInvalid date format. Please use DD.MM.YYYY.\n')
       
   add_phone()
   add_email()
   add_address()
   add_birthday()
   print(record.prettytable_for_search())
-  return f'{Fore.GREEN}Contact {name} with information succesfully added.{Style.RESET_ALL}\n'
+  return f'Contact {name} with information succesfully added.\n'
           
 
 @input_error
@@ -485,7 +497,7 @@ def edit_contact_info(book: AddressBook):
     print()
     print(record.prettytable_for_search())
     while True: 
-      info_type = input('\nWhat do you want to edit? (phone, email, address, birthday): \n').lower()
+      info_type = input('\nWhat do you want to edit? (name, phone, email, address, birthday): \n').lower()
       try:
         if info_type == 'phone':
           if record.phones:
@@ -548,9 +560,23 @@ def edit_contact_info(book: AddressBook):
               return f'Address {new_address} changed to {name}.\n'
             else:
               print(f'\n{name} have not address\n')
-
+        elif info_type == 'name':
+            print()
+            print(record.prettytable_for_search())
+            while True:
+              new_name = input('\nEnter new name: \n').strip().capitalize()
+              try:
+                record.edit_name(new_name)
+                book.delete(name)
+                book.add_record(record)
+                print()
+                print(record.prettytable_for_search())
+                return f'Name {name} changed to name {new_name}\n'
+              except ValueError as e:
+                print(f'{e}')
+                continue
         else:
-            print('\nUse only:  phone  email  address  birthday\n')
+            print('\nUse only:  name  phone  email  address  birthday\n')
             continue
 
       except Exception as e:
@@ -634,7 +660,10 @@ def load_data(filename="addressbook.pkl"):
 #   book = filedata if filedata else AddressBook()
 #   print("\nWelcome to the assistant bot!\nIf you need help, type 'help'.\n")
 #   while True:
-#     user_input = input("Enter a command: ")
+#     user_input = input("Enter a command: ").strip().lower()
+#     if not user_input:
+#       print(f'Please enter a command')
+#       continue
 #     command, *args = parse_input(user_input)
 #     if command not in COMMANDS:
 #             suggestions = suggest_command(command, COMMANDS)
@@ -642,8 +671,8 @@ def load_data(filename="addressbook.pkl"):
 #               for suggestion in suggestions:  
 #                 choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
 #                 if choice == 'y':
-#                     command = suggestion
-#                     break
+#                   command = suggestion
+#                   break
 #                 elif choice == 'n':
 #                   continue
 #                 else:
@@ -651,7 +680,7 @@ def load_data(filename="addressbook.pkl"):
 #                     break
 #               else:
 #                 print("Invalid command. Please try again.")
-#               continue
+#                 continue
 #             else:
 #                 print("Invalid command. Please try again.")
 #                 continue
