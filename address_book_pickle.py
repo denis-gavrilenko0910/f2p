@@ -159,18 +159,15 @@ class AddressBook(UserDict):
   def add_record(self, record: Record):
     self.data[record.name.value] = record
 
-
   def find(self, name) -> Record:
     if name in self.data:
       return self.data[name]
-
 
   def find_by_phone(self, phone) -> Record:
     for contact in self.data.values():
       if phone in [p.value for p in contact.phones]:
         return contact
     return None
-
 
   def find_by_brthd(self, birthday) -> Record:
     bday_with_year = (len(birthday.split('.')) == 3 and len(birthday.split('.')[0]) == 2 and len(birthday.split('.')[1]) == 2 and len(birthday.split('.')[2]) == 4)
@@ -180,14 +177,11 @@ class AddressBook(UserDict):
         contacts.append(contact)
     return contacts
     
-    
-
   def find_by_mail(self, email) -> Record:
     for contact in self.data.values():
         if contact.email is not None and email == contact.email.value:
           return contact
     return None
-
 
   def find_by_addr(self, address) -> Record:
     for contact in self.data.values():
@@ -299,24 +293,22 @@ def show_birthday(args, book: AddressBook) -> str:
 
 @input_error
 def birthdays(args, book):
-    if len(args) != 1:
-        raise KeyError
-    days = int(args[0])
-    upcoming_birthdays = book.get_upcoming_birthdays(days)
-    if not upcoming_birthdays:
-        return f"No birthdays in the next {days} days."
-     
-    table = PrettyTable()
-    table.field_names = ["Name", "Birthday", "Days Left"]
-
-    
-    for entry in upcoming_birthdays:
-        name = entry["name"]
-        birthday = entry["birthday"]
-        days_left = (datetime.strptime(birthday, "%Y-%m-%d").date() - datetime.today().date()).days
-        table.add_row([name, birthday, days_left])
-
-    return table
+  if len(args) != 1:
+    raise KeyError
+  days = int(args[0])
+  upcoming_birthdays = book.get_upcoming_birthdays(days)
+  if not upcoming_birthdays:
+    return f"No birthdays in the next {days} days."
+   
+  table = PrettyTable()
+  table.field_names = ["Name", "Birthday", "Days Left"]
+  
+  for entry in upcoming_birthdays:
+    name = entry["name"]
+    birthday = entry["birthday"]
+    days_left = (datetime.strptime(birthday, "%Y-%m-%d").date() - datetime.today().date()).days
+    table.add_row([name, birthday, days_left])
+  return table
 
 @input_error
 def add_all(book: AddressBook):
@@ -591,63 +583,3 @@ def load_data(filename="addressbook.pkl"):
       return pickle.load(f)
   except FileNotFoundError:
     return None
-  
-
-# def main():
-#   filedata = load_data() 
-#   book = filedata if filedata else AddressBook()
-#   print("\nWelcome to the assistant bot!\nIf you need help, type 'help'.\n")
-#   while True:
-#     user_input = input("Enter a command: ")
-#     command, *args = parse_input(user_input)
-#     if command not in COMMANDS:
-#             suggestion = suggest_command(command, COMMANDS)
-#             if suggestion:
-                
-#                 choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
-#                 if choice == 'y':
-#                     command = suggestion
-#                 else:
-#                     print("Invalid command. Please try again.")
-#                     continue
-#             else:
-#                 print("Invalid command. Please try again.")
-#                 continue
-            
-
-#     if command in ["close", "exit"]:
-#       save_data(book)
-#       print("Good bye!\nSaving data...")
-#       break
-#     elif command == "hello":
-#       print("How can I help you?")
-#     elif command == "add":
-#       print(add_contact(book))
-#     elif command == "addall":
-#       print(add_all(book))
-#     elif command == "remove":
-#       print(remove_contact_info(book))
-#     elif command == "edit":
-#       print(edit_contact_info(book))    
-#     elif command == "delete":
-#       print(remove_contact(book))
-#     elif command == "phone":
-#       print(show_phone(args, book))
-#     elif command == "all":
-#       print(show_all(book))
-#     elif command == "show-birthday":
-#       print(show_birthday(args, book))
-#     elif command == "birthdays":
-#       print(birthdays(args, book))         
-#     elif command == 'search':
-#       print(search(args, book))
-#     elif command == 'help':
-#       print("Available commands:")
-#       for cmd in HELP:
-#         print(f"- {cmd}")
-#     else:
-#       print("Invalid command.")
-        
-
-# if __name__ == "__main__":
-#   main()

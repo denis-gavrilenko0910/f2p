@@ -2,7 +2,6 @@ from prettytable import PrettyTable
 from collections import UserDict
 from address_book_pickle import Field
 from datetime import datetime
-from address_book_pickle import load_data, save_data
 from address_book_pickle import input_error
 
 class Note(Field):
@@ -100,33 +99,3 @@ def parse_input(user_input) -> tuple:
   cmd, *args = user_input.split()
   cmd = cmd.strip().lower()
   return cmd, *args
-
-
-# def main():
-#   filedata = load_data(filename="notebook.pkl")
-#   note_book = filedata if filedata else NoteBook()
-#   print("Welcome to the assistant bot!")
-#   while True:
-#     user_input = input("Enter a command: ")
-#     command, *args = parse_input(user_input)
-#     if command in ["close", "exit"]:
-#       save_data(note_book, filename="notebook.pkl")
-#       print("Good bye!")
-#       break
-#     elif command == "hello":
-#       print("How can I help you?")
-#     # elif command == "add-note":
-#     #   print(add_note(args, note_book))
-#     # elif command == "show-all-notes":
-#     #   print(show_notes(note_book))  
-#     # elif command == "delete-note":
-#     #   print(delete_note(args, note_book))  
-#     # elif command == "add-tag":
-#     #   print(add_tag(args, note_book))  
-#     # elif command == "find-tag":
-#     #   print(find_by_tag(args, note_book))  
-#     else:
-#       print("Invalid command.")
-        
-# # if __name__ == "__main__":
-# #   main()
