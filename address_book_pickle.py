@@ -197,10 +197,6 @@ class AddressBook(UserDict):
         contacts.append(contact)
     return contacts
     
-<<<<<<< HEAD
-=======
-
->>>>>>> preprod/v1
   def find_by_mail(self, email) -> Record:
     for contact in self.data.values():
         if contact.email is not None and email == contact.email.value:
@@ -649,66 +645,3 @@ def load_data(filename="addressbook.pkl"):
       return pickle.load(f)
   except FileNotFoundError:
     return None
-<<<<<<< HEAD
-  
-
-# def main():
-#   filedata = load_data() 
-#   book = filedata if filedata else AddressBook()
-#   print("\nWelcome to the assistant bot!\nIf you need help, type 'help'.\n")
-#   while True:
-#     user_input = input("Enter a command: ")
-#     command, *args = parse_input(user_input)
-#     if command not in COMMANDS:
-#             suggestion = suggest_command(command, COMMANDS)
-#             if suggestion:
-                
-#                 choice = input(f"Did you mean '{suggestion}'? (Y/N): ").strip().lower()
-#                 if choice == 'y':
-#                     command = suggestion
-#                 else:
-#                     print("Invalid command. Please try again.")
-#                     continue
-#             else:
-#                 print("Invalid command. Please try again.")
-#                 continue
-            
-
-#     if command in ["close", "exit"]:
-#       save_data(book)
-#       print("Good bye!\nSaving data...")
-#       break
-#     elif command == "hello":
-#       print("How can I help you?")
-#     elif command == "add":
-#       print(add_contact(book))
-#     elif command == "addall":
-#       print(add_all(book))
-#     elif command == "remove":
-#       print(remove_contact_info(book))
-#     elif command == "edit":
-#       print(edit_contact_info(book))    
-#     elif command == "delete":
-#       print(remove_contact(book))
-#     elif command == "phone":
-#       print(show_phone(args, book))
-#     elif command == "all":
-#       print(show_all(book))
-#     elif command == "show-birthday":
-#       print(show_birthday(args, book))
-#     elif command == "birthdays":
-#       print(birthdays(args, book))         
-#     elif command == 'search':
-#       print(search(args, book))
-#     elif command == 'help':
-#       print("Available commands:")
-#       for cmd in HELP:
-#         print(f"- {cmd}")
-#     else:
-#       print("Invalid command.")
-        
-
-# if __name__ == "__main__":
-#   main()
-=======
->>>>>>> preprod/v1
