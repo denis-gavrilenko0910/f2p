@@ -393,8 +393,8 @@ def add_all(book: AddressBook):
   def add_birthday():
     if record.birthday:
       return
-    birthday = input(f'Enter bitrhday DD.MM.YYYY or press Enter to skip: \n')
     while True:
+      birthday = input(f'Enter bitrhday DD.MM.YYYY or press Enter to skip: \n')
       if birthday == '':
         break
       try:
